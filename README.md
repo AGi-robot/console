@@ -37,4 +37,4 @@ Set `AGI_ROSBRIDGE_URL` to use a different rosbridge WebSocket URL. Set `AGI_WEB
 
 ## License
 
-Telepathy is licensed under **GPL-3.0-only**. See [LICENSE](LICENSE). The Grace avatar assets have separate terms documented in [`telepathic_management/telepathic_console/backend/static/assets/README.md`](telepathic_management/telepathic_console/backend/static/assets/README.md).
+Telepathy is licensed under **AGPL-3.0-only**. See [LICENSE](LICENSE). The Grace avatar assets have separate terms documented in [`telepathic_management/telepathic_console/backend/static/assets/README.md`](telepathic_management/telepathic_console/backend/static/assets/README.md).
