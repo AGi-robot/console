@@ -25,6 +25,6 @@ setup(
     maintainer="OppaAI",
     maintainer_email="oppa.ai.org@gmail.com",
     description="Shared telepathic input and stimulus routing for AGi systems",
-    license="GPL-3.0-only",
+    license="AGPL-3.0-only",
     entry_points={"console_scripts": ["telepathic_console = telepathic_management.telepathic_console.server:main"]},
 )
