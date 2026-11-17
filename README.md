@@ -11,16 +11,18 @@ This repository is a ROS 2 workspace package at its root. It includes the consol
 ## Requirements
 
 - ROS 2 Jazzy
-- `cryptic_signal_core` from [AGi](https://github.com/OppaAI/AGi)
+- `cryptic_signal_core` from [AGi-Robot/cypher](https://github.com/AGi-robot/cypher)
 - rosbridge running at `ws://127.0.0.1:9090` by default
 - Python dependencies declared in `package.xml` and `setup.py`
 
 ## Install in an assistant workspace
 
-Clone the repository beside the assistant repository, then link it into that workspace's `src` directory. From the workspace root:
+Clone Telepathy and Cypher beside the assistant repository, then link both packages into that workspace's `src` directory. From the workspace root:
 
 ```sh
 git clone https://github.com/AGi-robot/telepathy.git ../telepathy
+git clone https://github.com/AGi-robot/cypher.git ../cypher
+ln -s ../../cypher src/cryptic_signal_core
 ln -s ../../telepathy src/telepathic_management
 ```
 
