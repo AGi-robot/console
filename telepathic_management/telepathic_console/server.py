@@ -426,8 +426,23 @@ async def canvas_api(browser: WebSocket) -> None:
             pass
 
 
+def _tail_lines(path: Path, limit: int) -> list[bytes]:
+    chunks = []
+    newlines = 0
+    with path.open("rb") as log:
+        remaining = log.seek(0, os.SEEK_END)
+        while remaining and newlines <= limit:
+            size = min(8192, remaining)
+            remaining -= size
+            log.seek(remaining)
+            chunk = log.read(size)
+            chunks.append(chunk)
+            newlines += chunk.count(b"\n")
+    return b"".join(reversed(chunks)).splitlines()[-limit:]
+
+
 @app.get("/api/logs")
-async def get_logs(limit: int = 200, level: str = "ALL") -> dict:
+def get_logs(limit: int = 200, level: str = "ALL") -> dict:
     """Return recent persistent ROS logs for the local WebUI log viewer."""
     log_dir = Path(os.getenv("AGI_LOG_DIR", str(Path(os.getenv("AGI_HOME", "~/.agi")).expanduser() / "log"))).expanduser()
     if not re.fullmatch(r"ALL|DEBUG|INFO|WARN|ERROR|FATAL", level):
@@ -436,15 +451,17 @@ async def get_logs(limit: int = 200, level: str = "ALL") -> dict:
     entries = []
     for path in (log_dir / "application.jsonl", log_dir / "errors.jsonl"):
         try:
-            lines = path.read_text(encoding="utf-8").splitlines()
+            lines = _tail_lines(path, limit)
         except FileNotFoundError:
             continue
         except OSError as error:
             raise HTTPException(status_code=500, detail=f"Cannot read logs: {error}") from error
-        for line in lines[-limit:]:
+        for line in lines:
             try:
                 event = json.loads(line)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if not isinstance(event, dict):
                 continue
             if level == "ALL" or event.get("level") == level:
                 entries.append(event)
