@@ -4,6 +4,11 @@
 
 It provides the `telepathic_management` ROS 2 package and the `telepathic_console` executable. The console serves the shared WebUI, connects to rosbridge, and publishes typed `TelepathicSignal` messages to `/telepathic/stimulus`. Each assistant's Telepathic Input Core (TIC) decodes the signal locally and passes the text into its own cognitive system.
 
+The `telepathic_console` executable is a standalone web server packaged in a
+ROS 2 package so it can be installed and launched with `ros2 run`. It is not a
+ROS node: it communicates with ROS through the rosbridge WebSocket API and does
+not create an `rclpy` node.
+
 ## Repository contents
 
 This repository is a ROS 2 workspace package at its root. It includes the console backend, frontend, Canvas Studio host UI, and package-level checks.
