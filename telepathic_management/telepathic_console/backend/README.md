@@ -1,6 +1,6 @@
 # Telepathic Console assets
 
-`telepathic_management/telepathic_console/server.py` serves these static assets
+`../server.py` serves the static assets in `static/`
 and the pages in `../frontend/`, and proxies the browser WebSocket to rosbridge.
 
 The companion page pairs a live VRM chamber with a scrolling conversation.
@@ -18,7 +18,7 @@ VRM; they fall back to a neutral emblem if capture is unavailable.
 
 Grace remains visible while AIVA is offline. Chat submission and
 response streaming continue to use the existing telepathic API and ROS bridge.
-The UI does not require changes to Grace's LLM or PostgreSQL memory service.
+Grace's memory is a SQLite library inside the `aiva_chat` process.
 
 ROS packaging installs the companion frontend and its backend static assets,
 including `console.css`, `assets/grace-chamber.webp`, and the Canvas Studio UI.
