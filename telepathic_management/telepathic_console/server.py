@@ -44,7 +44,10 @@ _aiva_last_seen: float | None = None
 
 @app.get("/api/settings")
 async def get_settings() -> dict:
-    return {"settings": [], "runtime": [], "path": "",
+    return {"settings": [], "runtime": [
+                {"name": "ROS bridge", "value": os.getenv("AGI_ROSBRIDGE_URL", "ws://127.0.0.1:9090"), "source": "Environment"},
+                {"name": "Signal scheme", "value": os.getenv("AGI_TELEPATHIC_SCHEME", "ternary_utf8_v1"), "source": "Environment"},
+            ], "path": "",
             "apply_note": "Grace runtime configuration belongs to Shell.",
             "read_only_note": "This console does not edit AuRoRA or Grace runtime settings."}
 
@@ -68,20 +71,29 @@ async def presence() -> dict[str, bool | int | None]:
     age = None if _aiva_last_seen is None else time.monotonic() - _aiva_last_seen
     local_aiva = os.getenv("AGI_WEB_TELEOPS_CONSOLE_AIVA_LOCAL")
     if local_aiva is None:
-        # The AIVA-only cryptic codec is installed in AIVA's workspace and identifies
-        # a console hosted there. AuRoRA continues to rely on AIVA's remote heartbeat.
-        local_aiva = "true" if _aiva_cryptic_core is not None else "false"
+        local_aiva = "false"
     aiva_host = local_aiva.strip().lower() in {"1", "true", "yes", "on"}
     aiva_online = aiva_host or (age is not None and age <= timeout_s)
-    # This console runs on AuRoRA unless explicitly identified as the AIVA-local
-    # console. A browser ROS bridge connection is not a robot presence signal.
-    aurora_online = not aiva_host
+    # External consoles can run on any host; do not infer robot presence.
+    aurora_online = os.getenv("AGI_WEB_TELEOPS_CONSOLE_AURORA_LOCAL", "false").lower() in {"1", "true", "yes", "on"}
     return {
         "aiva_online": aiva_online,
         "aurora_online": aurora_online,
         "aiva_last_seen_seconds_ago": None if age is None else int(age),
         "timeout_seconds": timeout_s,
     }
+
+
+def _encode_stimulus(text: str, identifier: str) -> dict:
+    """Build the common wire contract for chat and Canvas request producers."""
+    scheme = os.getenv("AGI_TELEPATHIC_SCHEME", "ternary_utf8_v1")
+    if scheme != "ternary_utf8_v1":
+        raise ValueError(f"Unsupported signal scheme: {scheme}")
+    signal, pulse = encode_text(text)
+    return {"source": os.getenv("AGI_SOURCE_ID", socket.gethostname()),
+            "signal": list(signal), "pulse": pulse,
+            "channel": os.getenv("AGI_TELEPATHIC_CHANNEL", "grace"),
+            "scheme": scheme, "identifier": identifier}
 
 
 @app.post("/api/telepathic/send")
@@ -99,31 +111,13 @@ async def send_telepathic_input(request: Request) -> dict[str, str]:
 
     if request.query_params.get("web_search", "false").lower() in {"1", "true", "yes"}:
         text = f"/web {text}"
+    identifier = uuid.uuid4().hex
     try:
-        scheme = os.getenv("AGI_TELEPATHIC_SCHEME", "ternary_utf8_v1")
-        if scheme != "ternary_utf8_v1":
-            raise ValueError(f"Unsupported signal scheme: {scheme}")
-        signal, symbol_count = encode_text(text)
+        msg = await asyncio.to_thread(_encode_stimulus, text, identifier)
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-
-    identifier = uuid.uuid4().hex
     target = os.getenv("AGI_ROSBRIDGE_URL", "ws://127.0.0.1:9090")
-    envelope = {
-        "op": "publish",
-        "topic": "/telepathic/stimulus",
-        "msg": {
-            "source": os.getenv("AGI_SOURCE_ID", socket.gethostname()),
-            "pulse": symbol_count,
-            "signal": list(signal),
-            "channel": os.getenv(
-                "AGI_TELEPATHIC_CHANNEL",
-                "grace",
-            ),
-            "scheme": scheme,
-            "identifier": identifier,
-        },
-    }
+    envelope = {"op": "publish", "topic": "/telepathic/stimulus", "msg": msg}
     try:
         async with websockets.connect(target, open_timeout=3) as rosbridge:
             await rosbridge.send(json.dumps({"op": "advertise", "topic": envelope["topic"], "type": "cryptic_signal_core/msg/TelepathicSignal"}))
@@ -211,9 +205,7 @@ async def canvas_api(browser: WebSocket) -> None:
             async def publish(topic: str, body: dict) -> None:
                 text = json.dumps(body, separators=(",", ":"))
                 if topic == input_topic:
-                    signal, pulse = encode_text(text)
-                    msg = {"source": socket.gethostname(), "signal": list(signal), "pulse": pulse,
-                           "channel": "grace", "scheme": "ternary_utf8_v1", "identifier": identifier}
+                    msg = await asyncio.to_thread(_encode_stimulus, text, identifier)
                 else:
                     msg = {"data": text}
                 await ros.send(json.dumps({"op": "publish", "topic": topic, "msg": msg}))
@@ -248,13 +240,16 @@ async def canvas_api(browser: WebSocket) -> None:
                     await browser.send_json(event)
 
             tasks = [asyncio.create_task(browser_to_ros()), asyncio.create_task(ros_to_browser())]
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            for task in pending:
-                task.cancel()
-            await asyncio.gather(*pending, return_exceptions=True)
-            for task in done:
-                task.result()
-    except (websockets.WebSocketException, OSError, TimeoutError, RuntimeError, WebSocketDisconnect) as error:
+            try:
+                done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                for task in done:
+                    task.result()
+            finally:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+    except (websockets.WebSocketException, OSError, TimeoutError, RuntimeError, ValueError, WebSocketDisconnect) as error:
         await send_error(f"Canvas API could not reach its drawing service: {error}")
     finally:
         try:
