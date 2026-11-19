@@ -2,7 +2,13 @@
 
 **Telepathy** is AGi's shared ROS 2 package for the Web Teleops Console and the transport between the browser interface and an AGi system.
 
-It provides the `telepathic_management` ROS 2 package and the `telepathic_console` executable. The console serves the shared WebUI, connects to rosbridge, and publishes typed `TelepathicSignal` messages to `/telepathic/stimulus`. Each assistant's Telepathic Input Core (TIC) decodes the signal locally and passes the text into its own cognitive system.
+It provides the `telepathic_management` ROS 2 package and the `telepathic_console` executable. The console serves the shared WebUI and connects to rosbridge. AIVA's chat adapter accepts typed `TelepathicSignal` messages on `/telepathic/stimulus` and plain WebUI chat on `/aiva/chat_input`. AuRoRA's TIC is a separate component in its own runtime.
+
+The console's intrinsic settings API reads and writes AuRoRA's `aurora.yaml`
+through its `hrs` package; it requires that package to be available to the
+console. These settings are applied by AuRoRA's launch and do not configure
+AIVA's `aiva_chat` adapter. The settings API fails in an AIVA-only environment
+that does not provide `hrs`.
 
 The `telepathic_console` executable is a standalone web server packaged in a
 ROS 2 package so it can be installed and launched with `ros2 run`. It is not a
