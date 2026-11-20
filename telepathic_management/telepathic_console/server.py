@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from cryptic_signal_core.telepathic_encoding import encode_text
+from cryptic_signal_core.telepathic_encoding import decode_text, encode_text
 
 
 def _interface_dir() -> Path:
@@ -94,6 +94,55 @@ def _encode_stimulus(text: str, identifier: str) -> dict:
             "signal": list(signal), "pulse": pulse,
             "channel": os.getenv("AGI_TELEPATHIC_CHANNEL", "grace"),
             "scheme": scheme, "identifier": identifier}
+
+
+def _decode_response_event(event: dict) -> dict:
+    """Restore encoded text content while retaining the response event fields."""
+    if not isinstance(event, dict):
+        raise ValueError("Response event must be a JSON object")
+    decoded = dict(event)
+    if "content_signal" not in decoded:
+        return decoded  # Accept older receptors during a coordinated rollout.
+    encoded = decoded.pop("content_signal")
+    if not isinstance(encoded, dict) or encoded.get("scheme") != "ternary_utf8_v1":
+        raise ValueError("Unsupported response signal scheme")
+    signal = encoded.get("signal")
+    pulse = encoded.get("pulse")
+    if (not isinstance(signal, list)
+            or any(not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 255
+                   for value in signal)
+            or not isinstance(pulse, int) or isinstance(pulse, bool)):
+        raise ValueError("Malformed response signal")
+    decoded["content"] = decode_text(bytes(signal), pulse)
+    return decoded
+
+
+def _decode_rosbridge_response(raw_message: str) -> str:
+    """Decode response text after rosbridge, before relaying it to the browser."""
+    try:
+        envelope = json.loads(raw_message)
+    except (TypeError, json.JSONDecodeError):
+        return raw_message
+    if not isinstance(envelope, dict) or envelope.get("op") != "publish" \
+            or envelope.get("topic") != "/telepathic/response":
+        return raw_message
+    ros_message = envelope.get("msg")
+    if not isinstance(ros_message, dict) or not isinstance(ros_message.get("data"), str):
+        return raw_message
+    event = None
+    try:
+        event = json.loads(ros_message["data"])
+        decoded = _decode_response_event(event)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        event_id = (event.get("identifier") or event.get("radio_id") or "") \
+            if isinstance(event, dict) else ""
+        decoded = {"type": "error", "content": "Grace response signal could not be decoded."}
+        if isinstance(event, dict) and "identifier" in event:
+            decoded["identifier"] = event_id
+        else:
+            decoded["radio_id"] = event_id
+    ros_message["data"] = json.dumps(decoded, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
 
 
 @app.post("/api/telepathic/send")
@@ -230,11 +279,18 @@ async def canvas_api(browser: WebSocket) -> None:
                 async for raw in ros:
                     try:
                         envelope = json.loads(raw)
-                        if envelope.get("op") != "publish" or envelope.get("topic") != response_topic:
-                            continue
-                        event = json.loads(envelope.get("msg", {}).get("data", "{}"))
-                    except (json.JSONDecodeError, AttributeError, TypeError):
+                    except (json.JSONDecodeError, TypeError):
                         continue
+                    if not isinstance(envelope, dict) or envelope.get("op") != "publish" \
+                            or envelope.get("topic") != response_topic:
+                        continue
+                    try:
+                        event = json.loads(envelope.get("msg", {}).get("data", "{}"))
+                        event = _decode_response_event(event)
+                    except (json.JSONDecodeError, AttributeError, TypeError, ValueError):
+                        await browser.send_json({"type": "canvas_error", "identifier": identifier,
+                                                 "content": "Grace response signal could not be decoded."})
+                        return
                     if not isinstance(event, dict) or event.get("identifier") != identifier:
                         continue
                     await browser.send_json(event)
@@ -333,7 +389,7 @@ async def rosbridge_proxy(browser: WebSocket) -> None:
                     if isinstance(message, bytes):
                         await browser.send_bytes(message)
                     else:
-                        await browser.send_text(message)
+                        await browser.send_text(_decode_rosbridge_response(message))
 
             tasks = [asyncio.create_task(browser_to_ros()), asyncio.create_task(ros_to_browser())]
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)

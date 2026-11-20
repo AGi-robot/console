@@ -71,6 +71,10 @@ The page sends a request and the current drawing objects/selection to AIVA's
 replays strokes, shapes, and text visibly; **Stop Grace** interrupts replay and
 ignores later results for that request. Completed actions can be undone.
 
+Text in response events is Cypher-encoded by the receptor and decoded by the
+Console after rosbridge. Event type, request identifier, Canvas actions, and
+image payloads remain structured fields in the JSON event.
+
 Grace sees object coordinates and text supplied by the page. The page also renders a
 downscaled JPEG screenshot of the canvas and sends it with each request, and again when
 Grace asks for a fresh look between passes (`canvas_snapshot_request` answered on
