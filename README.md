@@ -12,9 +12,12 @@ and executable `telepathic_console`. It serves the WebUI on port 8853.
 The browser submits text or structured requests to `/api/telepathic/send`.
 The console backend encodes UTF-8 using Cypher's `ternary_utf8_v1` and publishes
 `TelepathicSignal` on `/telepathic/stimulus` through local rosbridge. The receptor
-in Grace decodes it. This is encoding, not encryption; browser-to-console HTTP
-carries the original text. Canvas WebSocket requests use the same signal codec.
-Responses stream on `/telepathic/response`.
+in Grace decodes it. Response events use `std_msgs/String` on
+`/telepathic/response`; Grace encodes each event's text content with the same
+Cypher scheme. Console decodes that content after rosbridge, before relaying
+the event to the WebUI. This is encoding, not encryption; browser-to-console
+HTTP carries the original text. Canvas WebSocket requests use the same signal
+codec.
 
 Console imports only the shared Cypher codec. It does not import HRM, TMS, SCS,
 or Grace's entity modules. The retired AuRoRA settings editor is disabled;
