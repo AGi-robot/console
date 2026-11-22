@@ -20,7 +20,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         *shared_data,
     ],
-    install_requires=["setuptools", "fastapi", "uvicorn", "websockets"],
+    install_requires=["setuptools", "fastapi", "uvicorn", "websockets", "openrgb-python>=0.3.8,<0.4"],
     zip_safe=True,
     maintainer="OppaAI",
     maintainer_email="oppa.ai.org@gmail.com",

@@ -5,6 +5,7 @@ import logging
 import os
 import socket
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -17,18 +18,21 @@ COLORS = {
     "responding": "72D65A",
     "working": "72D65A",
     "waiting": "355E2F",
-    "resting": "0A1007",
+    "resting": "142015",
 }
 
 
 class OpenRgb:
-    """Start OpenRGB's loopback SDK server and set the motherboard's static color."""
+    """Start OpenRGB's loopback server and keep one Python SDK client connected."""
 
     def __init__(self, executable: str | None = None) -> None:
         default = Path.home() / "openrgb" / "OpenRGB_1.0rc2_x86_64_0fca93e.AppImage"
         self.executable = Path(executable or os.getenv("AGI_OPENRGB_APPIMAGE", default))
         self.process: subprocess.Popen | None = None
+        self.client = None
+        self.device = None
         self.state: str | None = None
+        self._lock = threading.Lock()
 
     @staticmethod
     def _enabled() -> bool:
@@ -45,6 +49,14 @@ class OpenRgb:
     def start(self) -> None:
         if not self._enabled():
             return
+        try:
+            from openrgb import OpenRGBClient
+            from openrgb.utils import RGBColor
+        except ImportError:
+            LOGGER.warning("openrgb-python is unavailable; RGB activity sync is disabled")
+            return
+        self._client_class = OpenRGBClient
+        self._color_class = RGBColor
         if not self.executable.is_file() or not os.access(self.executable, os.X_OK):
             LOGGER.info("OpenRGB AppImage not found; RGB activity sync is disabled")
             return
@@ -65,7 +77,40 @@ class OpenRgb:
             else:
                 LOGGER.warning("OpenRGB SDK server did not become available")
                 return
+        if not self._connect():
+            return
         self.set_state("resting")
+
+    def _connect(self) -> bool:
+        try:
+            self.client = self._client_class(
+                address=SDK_HOST,
+                port=SDK_PORT,
+                name="Grace activity lighting",
+                protocol_version=4,
+            )
+            devices = self.client.get_devices_by_name(DEVICE, exact=False)
+            if not devices:
+                LOGGER.warning("OpenRGB did not report the configured motherboard: %s", DEVICE)
+                self.client.disconnect()
+                self.client = None
+                return False
+            self.device = devices[0]
+            self.device.set_mode("Static")
+            return True
+        except Exception as error:
+            LOGGER.warning("Could not connect the OpenRGB Python SDK client: %s", error)
+            self._disconnect()
+            return False
+
+    def _disconnect(self) -> None:
+        if self.client is not None:
+            try:
+                self.client.disconnect()
+            except Exception:
+                pass
+        self.client = None
+        self.device = None
 
     def set_state(self, state: str) -> None:
         if not self._enabled():
@@ -73,24 +118,20 @@ class OpenRgb:
         color = COLORS.get(state)
         if color is None or state == self.state:
             return
-        if not self._server_available():
-            LOGGER.debug("OpenRGB SDK server is unavailable")
-            return
-        try:
-            result = subprocess.run(
-                [str(self.executable), "--client", f"{SDK_HOST}:{SDK_PORT}",
-                 "--device", DEVICE, "--mode", "Static", "--color", color],
-                check=False, capture_output=True, text=True, timeout=12,
-            )
-        except (OSError, subprocess.TimeoutExpired) as error:
-            LOGGER.warning("Could not update OpenRGB lighting: %s", error)
-            return
-        if result.returncode:
-            LOGGER.warning("OpenRGB lighting update failed: %s", result.stderr.strip())
-            return
-        self.state = state
+        with self._lock:
+            try:
+                if self.client is None or self.device is None:
+                    if not self._server_available() or not self._connect():
+                        return
+                red, green, blue = (int(color[index:index + 2], 16) for index in (0, 2, 4))
+                self.device.set_color(self._color_class(red, green, blue))
+                self.state = state
+            except Exception as error:
+                LOGGER.warning("Could not update OpenRGB lighting: %s", error)
+                self._disconnect()
 
     def stop(self) -> None:
+        self._disconnect()
         if self.process and self.process.poll() is None:
             self.process.terminate()
             try:

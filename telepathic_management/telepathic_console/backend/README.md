@@ -25,6 +25,17 @@ including `console.css`, `assets/grace-chamber.webp`, and the Canvas Studio UI.
 The reusable action language and SVG renderer live in the separate `grace-canvas`
 Python library.
 
+## Grace activity lighting
+
+The Console reports Grace's thinking, responding, working, waiting, and resting
+states to a loopback OpenRGB SDK server. The Python `openrgb-python` client keeps
+one connection open and controls the `MSI Z790 GAMING PLUS WIFI` motherboard.
+Thinking, responding, and working use `#72D65A`; waiting uses `#355E2F`; resting
+uses steady near-black green `#142015`. The controller starts the OpenRGB AppImage
+from `~/openrgb/` by default; `AGI_OPENRGB_APPIMAGE` can point to another binary,
+and `AGI_OPENRGB_ENABLED=false` disables lighting control. If the Console stops
+reporting activity, the controller switches to resting after 12 seconds.
+
 ## System logs
 
 The AIVA launcher stores service output and ROS logs under `~/.agi/log` by
