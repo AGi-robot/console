@@ -77,7 +77,7 @@
 .companion-console .robot-container,
 .companion-console .robot-container.aiva-online,
 .companion-console .robot-container.grace-only { display: flex !important; position: absolute; z-index: 2; inset: 18% 20% 23%; width: auto; height: auto; min-height: 0; margin: 0; flex: none; padding: 0; }
-.chamber-panel.portrait-zoom .robot-container { inset: 2% 7% 13%; }
+.chamber-panel.portrait-zoom .robot-container { inset: 0 0 48px; }
 .companion-console .grace-avatar-stage,
 .companion-console .robot-container.aiva-online .grace-avatar-stage,
 .companion-console .robot-container.grace-only .grace-avatar-stage { display: block; position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
@@ -292,7 +292,7 @@
     .companion-layout { grid-template-columns: 1fr; grid-template-rows: minmax(185px, 30dvh) minmax(0, 1fr); gap: 8px; padding: 4px 8px 8px; }
     .chamber-panel { width: 210px; justify-self: center; overflow: hidden; }
     .chamber-panel.portrait-zoom .chamber-visual-layer { transform: none; }
-    .chamber-panel.portrait-zoom .robot-container { inset: 2% 5% 13%; }
+    .chamber-panel.portrait-zoom .robot-container { inset: 0 0 34px; }
     .probe-full-frame { inset: 17% 20% 25%; }
     .chamber-art { inset: 0 0 33px; }
     .companion-console .robot-container, .companion-console .robot-container.aiva-online, .companion-console .robot-container.grace-only { inset: 17% 20% 25%; }

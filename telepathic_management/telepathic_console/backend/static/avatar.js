@@ -9,7 +9,7 @@
   const fullFrame = document.querySelector('.probe-full-frame');
   const cameraViews = {
     full: { distance: 2.3, targetHeight: 0.52 },
-    portrait: { distance: 0.72, targetHeight: 0.8 },
+    portrait: { distance: 0.62, targetHeight: 0.8 },
   };
   const cameraFov = 30;
 
