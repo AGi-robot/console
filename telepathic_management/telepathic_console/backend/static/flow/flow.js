@@ -4,8 +4,8 @@
   const $ = (id) => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
   const modules = {
-    user: {name:'Your browser', icon:'♡', type:'http', kind:'Browser interface', x:105,y:115, subtitle:'Prompt & response', location:'Console frontend', description:'Where a thought begins, and where Grace’s response becomes visible. In this preview, everything stays in your browser.', input:'Your text, or a Canvas request', output:'HTTP chat request / Canvas WebSocket'},
-    console: {name:'Console',icon:'▣',type:'http',kind:'Web process',x:105,y:285,subtitle:'HTTP & WebSocket',location:'telepathic_console · outside Grace',description:'Serves the WebUI, encodes outgoing prompts, and relays rosbridge events. It decodes response text before forwarding it to the browser.',input:'/api/telepathic/send or /api/canvas/ws',output:'Encoded stimulus; decoded response events'},
+    user: {name:'Your browser', icon:'♡', type:'http', kind:'Console frontend', x:105,y:115, subtitle:'WebUI · frontend', location:'The web browser on your device', description:'The frontend of Console: the page where you enter prompts and see Grace’s replies. It sends requests to the Console backend. In this preview, everything stays in your browser.', input:'Your text, or a Canvas request', output:'HTTP chat request / Canvas WebSocket'},
+    console: {name:'Console backend',icon:'▣',type:'http',kind:'Console backend process',x:105,y:285,subtitle:'Python web server',location:'telepathic_console · outside Grace',description:'The server side of Console, separate from the browser frontend. It serves the WebUI, encodes outgoing prompts, and relays rosbridge events. It decodes response text before forwarding it to the browser.',input:'/api/telepathic/send or /api/canvas/ws',output:'Encoded stimulus; decoded response events'},
     cypher: {name:'Cypher',icon:'◇',type:'python',kind:'Shared Python codec',x:285,y:115,subtitle:'Encode / decode',location:'Imported by Console and the receptor',description:'Converts text to and from ternary_utf8_v1 signals. This is reversible encoding. The same library is used on both sides of ROS transport.',input:'UTF-8 text or encoded signal',output:'Signal bytes + pulse, or decoded text'},
     bridge: {name:'rosbridge',icon:'⌁',type:'ros',kind:'ROS 2 bridge',x:285,y:285,subtitle:'WebSocket ↔ ROS 2',location:'/rosbridge_websocket + /rosapi',description:'Connects the external Console to Grace’s ROS graph. Stimulus and response events cross this bridge in opposite directions.',input:'WebSocket publish / subscribe envelopes',output:'/telepathic/stimulus · /telepathic/response'},
     receptor: {name:'Telepathy',icon:'✦',type:'ros',kind:'ROS 2 node',x:480,y:405,subtitle:'Grace’s receptor',location:'/telepathy_receptor · AIVA',description:'Grace’s entry point. Decodes the stimulus, dispatches chat or Canvas requests, and encodes text in response events. The conversation and memory libraries run inside this process.',input:'TelepathicSignal on /telepathic/stimulus',output:'JSON std_msgs/String on /telepathic/response'},
@@ -26,18 +26,15 @@
   ];
   const paths = new Map();
   for (const [from,to,type] of links) {
-    const a=modules[from], b=modules[to];
     const path=document.createElementNS(NS,'path');
-    const dx=b.x-a.x, dy=b.y-a.y;
-    const d=Math.abs(dx)>Math.abs(dy)
-      ? `M${a.x},${a.y} C${a.x+dx*.5},${a.y} ${b.x-dx*.5},${b.y} ${b.x},${b.y}`
-      : `M${a.x},${a.y} C${a.x},${a.y+dy*.5} ${b.x},${b.y-dy*.5} ${b.x},${b.y}`;
-    path.setAttribute('d',d);path.setAttribute('class',`edge ${type}`);
+    path.dataset.from=from;path.dataset.to=to;
+    path.setAttribute('class',`edge ${type}`);
     $('edges').append(path);paths.set(`${from}:${to}`,{path,reverse:false,type});paths.set(`${to}:${from}`,{path,reverse:true,type});
   }
   const nodeElements = {};
   for (const [id,m] of Object.entries(modules)) {
     const button=document.createElement('button');button.type='button';
+    button.dataset.module=id;
     button.className=`node ${m.type}${m.optional?' optional':''}`;
     button.style.left=`${m.x/10}%`;button.style.top=`${m.y/6.5}%`;
     button.setAttribute('aria-pressed','false');button.setAttribute('aria-label',`${m.name}: ${m.kind}`);
@@ -47,6 +44,36 @@
     const subtitle=document.createElement('span');subtitle.className='node-type';subtitle.textContent=m.subtitle;
     top.append(icon,name);button.append(top,subtitle);button.addEventListener('click',()=>inspect(id));
     $('nodes').append(button);nodeElements[id]=button;
+  }
+  function layoutConnections() {
+    // Match SVG units to CSS pixels. A fixed 1000×650 viewBox letterboxed
+    // when the responsive map changed aspect ratio, detaching its edges.
+    const map=$('constellation');
+    $('connections').setAttribute('viewBox',`0 0 ${map.clientWidth} ${map.clientHeight}`);
+    const bounds=(id)=>{
+      const node=nodeElements[id];
+      return {x:node.offsetLeft,y:node.offsetTop,w:node.offsetWidth,h:node.offsetHeight};
+    };
+    for(const [from,to] of links) {
+      const a=bounds(from),b=bounds(to),dx=b.x-a.x,dy=b.y-a.y;
+      let d;
+      if(from==='canvas'&&to==='model') {
+        // Route the long model connection outside Memory and Interactive.
+        const x1=a.x+a.w/2,y1=a.y,x2=b.x+b.w/2,y2=b.y;
+        const lane=Math.max(x1,x2)+24;
+        d=`M${x1},${y1} C${lane},${y1} ${lane},${y1} ${lane},${y1-24} L${lane},${y2+24} Q${lane},${y2} ${x2},${y2}`;
+      } else if(Math.abs(dx)>Math.abs(dy)) {
+        const direction=Math.sign(dx),x1=a.x+direction*a.w/2,x2=b.x-direction*b.w/2;
+        const bend=Math.max(24,Math.abs(x2-x1)*.5);
+        d=`M${x1},${a.y} C${x1+direction*bend},${a.y} ${x2-direction*bend},${b.y} ${x2},${b.y}`;
+      } else {
+        const direction=Math.sign(dy),y1=a.y+direction*a.h/2,y2=b.y-direction*b.h/2;
+        const bend=Math.max(24,Math.abs(y2-y1)*.5);
+        d=`M${a.x},${y1} C${a.x},${y1+direction*bend} ${b.x},${y2-direction*bend} ${b.x},${y2}`;
+      }
+      paths.get(`${from}:${to}`).path.setAttribute('d',d);
+    }
+    if(activeLink)positionPacket(Math.min(elapsed/duration,1));
   }
   function inspect(id) {
     const m=modules[id];
@@ -179,6 +206,10 @@
   // Do not skip through the story while the browser tab is hidden.
   document.addEventListener('visibilitychange',()=>{lastTime=null;});
   reducedMotion.addEventListener('change',()=>{$('packet').toggleAttribute('hidden',reducedMotion.matches||index<0||(!playing&&index===steps.length-1));});
+  layoutConnections();
+  const layoutObserver=new ResizeObserver(layoutConnections);
+  layoutObserver.observe($('constellation'));
+  Object.values(nodeElements).forEach(node=>layoutObserver.observe(node));
   reset();
   revealModule('receptor');
 })();
