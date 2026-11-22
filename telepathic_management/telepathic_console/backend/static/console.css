@@ -283,8 +283,12 @@
 .companion-console #userInput { width: 100%; min-width: 0; padding: 12px; border: 0; outline: 0; color: var(--console-text); background: transparent; font: inherit; font-size: 15px; box-shadow: none; }
 .companion-console #userInput::placeholder { color: var(--console-muted); opacity: 1; }
 .companion-console .input-btn { color: var(--console-muted); background: transparent; border: 0; min-width: 34px; padding: 5px; font-size: 22px; }
-.companion-console .globe-btn { font-size: 17px; opacity: .7; }
-.companion-console .globe-btn.active { opacity: 1; background: #394a43; border-radius: 10px; }
+.companion-console .globe-btn { --globe-off: #577563; --globe-on: #ace7cc; color: var(--globe-off); opacity: .9; }
+.companion-console .globe-btn .globe-icon { display: block; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.companion-console .globe-btn:hover { color: var(--globe-on); }
+.companion-console .globe-btn.active { color: var(--globe-on); opacity: 1; background: rgba(172, 231, 204, .1); border-radius: 10px; box-shadow: 0 0 10px rgba(172, 231, 204, .2); }
+[data-theme="light"] .companion-console .globe-btn { --globe-off: #72927e; --globe-on: #378851; }
+[data-theme="light"] .companion-console .globe-btn.active { background: rgba(55, 136, 81, .1); box-shadow: 0 0 9px rgba(55, 136, 81, .16); }
 .companion-console .send-btn { display: grid; place-items: center; flex: 0 0 52px; min-width: 52px; height: 52px; margin: 0; padding: 0; border: 1px solid #85b5a4; border-radius: 13px; color: var(--console-accent); background: linear-gradient(125deg, #29483f, #202f2d); font-size: 25px; box-shadow: 0 0 10px rgba(133, 181, 164, .16), inset 0 1px 5px rgba(172, 231, 204, .08); }
 .companion-console button:disabled { opacity: .45; cursor: wait; }
 .companion-console button:focus-visible, .companion-console a:focus-visible { outline: 2px solid #ace7cc; outline-offset: 3px; }

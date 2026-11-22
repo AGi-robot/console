@@ -460,6 +460,8 @@
         // Globe toggle for web search
         function toggleWebSearch() {
             webSearchEnabled = !webSearchEnabled;
+            globeBtn.setAttribute('aria-pressed', String(webSearchEnabled));
+            globeBtn.title = `Web search ${webSearchEnabled ? 'on' : 'off'}`;
 
             if (webSearchEnabled) {
                 globeBtn.classList.add('active');
