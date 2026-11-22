@@ -81,11 +81,13 @@
 .companion-console .grace-avatar-stage,
 .companion-console .robot-container.aiva-online .grace-avatar-stage,
 .companion-console .robot-container.grace-only .grace-avatar-stage { display: block; position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
-.avatar-probes { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 0 3px #50eaff88); }
+.avatar-probes { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
 .probe-wire { fill: none; stroke: #201d20; stroke-width: .85; stroke-linecap: round; stroke-linejoin: round; }
-.probe-head { stroke: #c08d88; stroke-width: .22; }
-.probe-body { stroke: #899f91; stroke-width: .23; }
-.probe-signal { fill: #00f4ff; stroke: #e8ffff; stroke-width: .035; opacity: 1; filter: drop-shadow(0 0 1.1px #00f4ff) drop-shadow(0 0 2.4px #00dfff); }
+.probe-head { stroke: #c6819a; stroke-width: .22; }
+.probe-body { stroke: #ace7cc; stroke-width: .23; }
+.probe-signal { stroke-width: .035; opacity: 1; }
+.probe-signal-red { fill: #e87891; stroke: #ffe0e8; filter: drop-shadow(0 0 1.1px #e87891) drop-shadow(0 0 2.4px #c6819a); }
+.probe-signal-mint { fill: #c7ffe0; stroke: #f1fff7; filter: drop-shadow(0 0 1.1px #c7ffe0) drop-shadow(0 0 2.4px #ace7cc); }
 .robot-container:not(.aiva-online) .probe-signal { visibility: hidden; }
 .companion-console #robotVrmCanvas { cursor: default; touch-action: auto; }
 .companion-console #robotVrmCanvas:active { cursor: default; }
