@@ -206,7 +206,10 @@
   }
 
   function render(now) {
-    if (!avatar) return;
+    if (!avatar || document.hidden) {
+      frame = 0;
+      return;
+    }
     frame = requestAnimationFrame(render);
     if (now < nextFrameAt) return;
     nextFrameAt = now + 33;
@@ -224,6 +227,15 @@
   document.getElementById('avatarZoomSwitch')?.addEventListener('change', (event) => {
     frameCamera(event.target.checked ? 'portrait' : 'full');
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && frame) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    } else if (avatar && !frame) {
+      nextFrameAt = 0;
+      frame = requestAnimationFrame(render);
+    }
+  });
   document.querySelector('.avatar-zoom-control')?.addEventListener('click', () => {
     requestAnimationFrame(() => document.getElementById('userInput')?.focus({ preventScroll: true }));
   });
@@ -240,7 +252,7 @@
     try {
       await loadAvatar();
       avatar.resize();
-      if (!frame) frame = requestAnimationFrame(render);
+      if (!document.hidden && !frame) frame = requestAnimationFrame(render);
     } catch (error) {
       console.error('Could not load Grace.vrm:', error);
       container.classList.remove('aiva-online', 'grace-only');

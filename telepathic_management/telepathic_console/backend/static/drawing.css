@@ -6,9 +6,9 @@
 }
 html[data-theme="dark"] {
   color-scheme: dark;
-  --page: #1a181c; --panel: #221f24; --raised: #2c282e; --board: #18161a;
-  --ink: #eee8e4; --muted: #b0a5ab; --line: #3b333c; --accent: #dda596;
-  --accent-soft: #3c2e31; --accent-ink: #292021; --shadow: #0006;
+  --page: #101719; --panel: #162022; --raised: #1d2a2b; --board: #0c1214;
+  --ink: #e6eee9; --muted: #9daead; --line: #2b393a; --accent: #ace7cc;
+  --accent-soft: #243b34; --accent-ink: #10221b; --shadow: #0008;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 13px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }

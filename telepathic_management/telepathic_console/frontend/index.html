@@ -17,12 +17,12 @@
     <link rel="preload" href="/static/assets/Grace.vrm" as="fetch" crossorigin fetchpriority="high">
     <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
     <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/styles.css?v=grace-always-visible">
-    <link rel="stylesheet" href="/static/console.css?v=plush-robot-mascot-20261114">
+    <link rel="stylesheet" href="/static/styles.css?v=signal-garden-20261122">
+    <link rel="stylesheet" href="/static/console.css?v=chat-time-muted-20261122">
     <script src="/static/theme.js" defer></script>
 </head>
 <body class="companion-console">
-    <div class="cyber-bg" id="cyberBg" aria-hidden="true"><canvas id="matrixCanvas"></canvas></div>
+    <div class="cyber-bg" id="cyberBg" aria-hidden="true"></div>
     <div class="reward-feedback" id="rewardFeedback"></div>
     <div class="container companion-shell">
         <header class="app-header">
@@ -167,6 +167,7 @@
                 </div>
             </section>
             <section class="conversation-panel" aria-label="Chat with Grace">
+                <canvas id="matrixCanvas" aria-hidden="true"></canvas>
                 <header class="conversation-header"><div class="grace-identity" aria-hidden="true">✦</div>
                     <div><div class="conversation-title">Grace <span class="entity-tag">AIVA</span></div><p>Your AI companion</p></div>
                 </header>
@@ -207,8 +208,8 @@
         </main>
         <div class="mini-status" id="miniStatus" hidden><span id="statusEmoji">✦</span><span id="miniStatusText">Grace is here</span><span id="connDot"></span><span id="connText">Connecting</span></div>
     </div>
-    <script src="/static/script.js?v=chat-metrics-20261111" defer></script>
-    <script type="module" src="/static/avatar.js?v=grace-online-cable-signals"></script>
+    <script src="/static/script.js?v=chat-time-muted-20261122" defer></script>
+    <script type="module" src="/static/avatar.js?v=avatar-hidden-tab-pause-20261122"></script>
     <script src="/static/presence.js?v=presence-host-status" defer></script>
 </body>
 </html>

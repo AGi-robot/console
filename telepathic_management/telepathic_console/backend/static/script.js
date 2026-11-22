@@ -1,93 +1,114 @@
-// Matrix Rain
+        // Mint rune tunnel, streaming outward from its vanishing point
         const canvas = document.getElementById('matrixCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas?.getContext('2d');
+        const matrixPanel = canvas?.closest('.conversation-panel');
 
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initDrops();
+            if (!canvas || !matrixPanel) return;
+            // Keep the backing store at CSS resolution: this panel-sized canvas
+            // stays small even on high-DPI displays.
+            canvas.width = matrixPanel.clientWidth;
+            canvas.height = matrixPanel.clientHeight;
+            initTunnelGlyphs();
         }
 
-        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%^&*';
-        const charArray = chars.split('');
+        const runeChars = Array.from('ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ');
+        const tunnelGlyphCount = 76;
+        let tunnelGlyphs = [];
 
-        const fontSize = 16;
-        let columns = 0;
-        let drops = [];
+        function randomTunnelGlyph() {
+            return {
+                angle: Math.random() * Math.PI * 2,
+                depth: 0.025 + Math.random() * 0.98,
+                speed: 0.006 + Math.random() * 0.014,
+                rune: runeChars[Math.floor(Math.random() * runeChars.length)],
+                bright: Math.random() > 0.84,
+            };
+        }
 
-        function initDrops() {
-            columns = Math.floor(canvas.width / fontSize);
-            drops = [];
-            for (let i = 0; i < columns; i++) {
-                drops[i] = Math.random() * -50;
-            }
+        function initTunnelGlyphs() {
+            tunnelGlyphs = Array.from({ length: tunnelGlyphCount }, randomTunnelGlyph);
         }
 
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
 
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function drawRuneTunnel() {
+            if (!ctx || !canvas) return;
+            const { width, height } = canvas;
+            const cx = width * 0.5;
+            const cy = height * 0.49;
+            const radiusX = Math.hypot(width, height) * 0.62;
+            const radiusY = Math.hypot(width, height) * 0.46;
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+            // A translucent clear leaves short trails that reinforce outward motion.
+            ctx.fillStyle = 'rgba(16, 23, 25, 0.30)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#00ff88';
-            ctx.font = fontSize + 'px monospace';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = '#00ff88';
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = charArray[Math.floor(Math.random() * charArray.length)];
-                const x = i * fontSize;
-                const y = drops[i] * fontSize;
-
-                ctx.fillText(text, x, y);
-
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
+            // Perspective spokes and nested rings give the field a tunnel shape.
+            ctx.save();
+            ctx.strokeStyle = 'rgba(172, 231, 204, 0.11)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(angle) * radiusX, cy + Math.sin(angle) * radiusY);
+                ctx.stroke();
             }
+            for (let i = 1; i <= 7; i++) {
+                const depth = i / 8;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, radiusX * depth, radiusY * depth, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
 
+            for (const glyph of tunnelGlyphs) {
+                glyph.depth += glyph.speed;
+                if (glyph.depth >= 1) Object.assign(glyph, randomTunnelGlyph(), { depth: 0.025 });
+
+                const x = cx + Math.cos(glyph.angle) * radiusX * glyph.depth;
+                const y = cy + Math.sin(glyph.angle) * radiusY * glyph.depth;
+                const size = 6 + glyph.depth * (glyph.bright ? 25 : 17);
+                const alpha = 0.16 + glyph.depth * 0.58;
+                ctx.font = `${size}px "Noto Sans Runic", serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = glyph.bright
+                    ? `rgba(224, 255, 240, ${Math.min(0.92, alpha + 0.14)})`
+                    : `rgba(172, 231, 204, ${alpha})`;
+                ctx.shadowColor = '#ace7cc';
+                ctx.shadowBlur = glyph.bright ? 11 : 4;
+                ctx.fillText(glyph.rune, x, y);
+            }
             ctx.shadowBlur = 0;
         }
 
-        function drawMatrixHeads() {
-            for (let i = 0; i < drops.length; i++) {
-                if (Math.random() > 0.98) {
-                    const text = charArray[Math.floor(Math.random() * charArray.length)];
-                    const x = i * fontSize;
-                    const y = (drops[i] - 1) * fontSize;
-
-                    ctx.fillStyle = '#ccffcc';
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = '#00ff88';
-                    ctx.fillText(text, x, y);
-                }
-            }
-            ctx.shadowBlur = 0;
-        }
-
-        let matrixTimer = null;
-        function syncMatrixAnimation() {
-            const shouldAnimate = document.documentElement.dataset.theme === 'dark';
-            if (shouldAnimate && matrixTimer === null) {
-                matrixTimer = setInterval(() => {
-                    drawMatrix();
-                    drawMatrixHeads();
-                }, 70);
-            } else if (!shouldAnimate && matrixTimer !== null) {
-                clearInterval(matrixTimer);
-                matrixTimer = null;
+        let tunnelTimer = null;
+        function syncTunnelAnimation() {
+            const shouldAnimate = Boolean(canvas && matrixPanel &&
+                document.documentElement.dataset.theme === 'dark' &&
+                !document.hidden &&
+                !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+                matrixPanel.getClientRects().length);
+            if (shouldAnimate && tunnelTimer === null) {
+                tunnelTimer = setInterval(drawRuneTunnel, 90);
+            } else if (!shouldAnimate && tunnelTimer !== null) {
+                clearInterval(tunnelTimer);
+                tunnelTimer = null;
             }
         }
-        new MutationObserver(syncMatrixAnimation).observe(document.documentElement, {
+        new MutationObserver(syncTunnelAnimation).observe(document.documentElement, {
             attributes: true,
             attributeFilter: ['data-theme'],
         });
-        syncMatrixAnimation();
+        document.addEventListener('visibilitychange', syncTunnelAnimation);
+        if (matrixPanel && 'ResizeObserver' in window) {
+            new ResizeObserver(resizeCanvas).observe(matrixPanel);
+        } else {
+            window.addEventListener('resize', resizeCanvas);
+        }
+        syncTunnelAnimation();
 
         // Circuit elements
         function createCircuitElements() {
@@ -1071,7 +1092,18 @@
         }
 
         // Idle animations
+        const idleRobotContainer = robot?.closest('.robot-container');
+        function canAnimateIdleRobot() {
+            return Boolean(!document.hidden && robot && robotContainerHasVisibleRobot());
+        }
+
+        function robotContainerHasVisibleRobot() {
+            return Boolean(idleRobotContainer && robot.getClientRects().length && getComputedStyle(robot).display !== 'none');
+        }
+
         function startIdleAnimations() {
+            stopIdleAnimations();
+            if (!canAnimateIdleRobot()) return;
             idleInterval = setInterval(() => {
                 if (!isSpeaking && !isStreaming && !isBeingPetted && !isBeingPoked) {
                     const expressions = ['happy', 'look-left', 'look-right', 'look-up', 'normal'];
@@ -1097,6 +1129,19 @@
         function stopIdleAnimations() {
             clearInterval(idleInterval);
             clearInterval(blinkInterval);
+            idleInterval = null;
+            blinkInterval = null;
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopIdleAnimations();
+            else startIdleAnimations();
+        });
+        if (idleRobotContainer) {
+            new MutationObserver(() => {
+                if (canAnimateIdleRobot()) startIdleAnimations();
+                else stopIdleAnimations();
+            }).observe(idleRobotContainer, { attributes: true, attributeFilter: ['class'] });
         }
 
         function blink() {

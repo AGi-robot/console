@@ -1982,7 +1982,7 @@
 
         .mini-status { display: none; }
 
-/* Aidon-inspired Web Teleops Console palette, with Grace's pink identity kept as an accent. */
+/* Shared Web Teleops Console palette, with Signal Garden's mint identity. */
 :root, html[data-theme="light"] {
     color-scheme: light;
     --page: #d3d1c5;
@@ -2002,20 +2002,20 @@
 }
 html[data-theme="dark"] {
     color-scheme: dark;
-    --page: #19161d;
-    --panel: #211d25;
-    --panel-raised: #28242e;
-    --ink: #f2f1f4;
-    --muted-ink: #aaa4b2;
-    --line: #413a47;
-    --accent: #d58cae;
-    --accent-deep: #a3b58a;
-    --accent-soft: rgba(213, 140, 174, .16);
-    --success: #a3b58a;
-    --glass: #172439;
+    --page: #101719;
+    --panel: #162022;
+    --panel-raised: #1d2a2b;
+    --ink: #e6eee9;
+    --muted-ink: #9daead;
+    --line: #2b393a;
+    --accent: #ace7cc;
+    --accent-deep: #c4f3dd;
+    --accent-soft: rgba(172, 231, 204, .14);
+    --success: #ace7cc;
+    --glass: #172325;
     --shell-shadow: rgba(0, 0, 0, .48);
     --shell-highlight: rgba(255, 255, 255, .9);
-    --grid-ink: rgba(198, 181, 211, .055);
+    --grid-ink: rgba(172, 231, 204, .055);
 }
 
 body {
