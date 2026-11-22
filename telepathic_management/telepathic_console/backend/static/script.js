@@ -13,6 +13,8 @@
         }
 
         let networkNodes = [];
+        let networkZoom = 1;
+        let signalPhase = 0;
 
         function initNetworkNodes() {
             const count = Math.max(100, Math.min(180, Math.floor((canvas?.width || 800) / 5)));
@@ -35,6 +37,8 @@
             const { width, height } = canvas;
             const cx = width * 0.5;
             const cy = height * 0.5;
+            networkZoom = Math.min(1.55, networkZoom + 0.00035);
+            signalPhase = (signalPhase + 0.025) % 1;
 
             ctx.fillStyle = 'rgba(8, 16, 15, 0.34)';
             ctx.fillRect(0, 0, width, height);
@@ -48,16 +52,12 @@
             const projected = networkNodes.map((node) => {
                 node.x += node.vx;
                 node.y += node.vy;
-                // Moving the camera through the field makes nearby nodes expand outward.
-                node.z -= 0.035 + node.vz;
+                // Keep the mesh in place; use a gradual global zoom instead of tunnel depth resets.
+                node.z += node.vz;
                 if (node.x < -1.55 || node.x > 1.55) node.vx *= -1;
                 if (node.y < -1.35 || node.y > 1.35) node.vy *= -1;
-                if (node.z < 0.24) {
-                    node.z = 2.4;
-                    node.x = (Math.random() * 2 - 1) * 1.4;
-                    node.y = (Math.random() * 2 - 1) * 1.2;
-                }
-                const scale = 0.9 / (node.z + 0.45);
+                if (node.z < 0.24 || node.z > 2.4) node.vz *= -1;
+                const scale = (0.9 * networkZoom) / (node.z + 0.45);
                 return {
                     node,
                     x: cx + node.x * width * 0.55 * scale,
@@ -67,6 +67,7 @@
             });
 
             const maxLink = Math.max(100, Math.min(190, width * 0.23));
+            const signalPoints = [];
             ctx.lineWidth = 0.8;
             for (let i = 0; i < projected.length; i++) {
                 const a = projected[i];
@@ -82,11 +83,23 @@
                         ? `rgba(198, 129, 154, ${strength * 0.72})`
                         : `rgba(172, 231, 204, ${strength})`;
                     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                    if ((i * 31 + j * 17) % 13 === 0) {
+                        const phaseOffset = ((i * 11 + j * 7) % 13) / 13;
+                        const t = (signalPhase + phaseOffset) % 1;
+                        signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum: a.node.plum || b.node.plum });
+                    }
                 }
             }
 
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            // Small pulses travel along a subset of the mesh edges.
+            for (const signal of signalPoints) {
+                ctx.beginPath(); ctx.arc(signal.x, signal.y, 1.8, 0, Math.PI * 2);
+                ctx.fillStyle = signal.plum ? '#efb6ca' : '#e3fff0';
+                ctx.shadowColor = signal.plum ? '#c6819a' : '#ace7cc';
+                ctx.shadowBlur = 7;
+                ctx.fill();
+            }
+
             for (const point of projected) {
                 const { node, x, y, scale } = point;
                 const radius = (node.sparkle ? 2.3 : 1.2) + scale * (node.sparkle ? 1.6 : 0.8);
