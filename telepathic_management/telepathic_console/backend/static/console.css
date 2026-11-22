@@ -13,11 +13,11 @@
     --console-heading-glow: rgba(172, 231, 204, .14);
     --console-frame: rgba(172, 231, 204, .34);
     --console-frame-strong: rgba(172, 231, 204, .58);
-    --grace-accent: #c6819a;
+    --grace-accent: #ffb2cd;
     --grace-line: #88536b;
     --grace-bubble: linear-gradient(125deg, #482d3d, #302432);
     --grace-text: #f4dfe8;
-    --grace-glow: rgba(198, 129, 154, .18);
+    --grace-glow: rgba(255, 178, 205, .26);
     margin: 0; padding: 10px; min-height: 100dvh; box-sizing: border-box;
     background: #101719; color: var(--console-text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -29,9 +29,9 @@
     --console-strong-line: #65575a; --console-accent: #b77b7e;
     --console-frame: #9ab8a8; --console-frame-strong: #789b89;
     --console-glow: rgba(105, 63, 68, .12); --console-heading-glow: #d2938b26;
-    --grace-accent: #8f536a; --grace-line: #c7a1b2;
+    --grace-accent: #c33f70; --grace-line: #c7a1b2;
     --grace-bubble: linear-gradient(125deg, #f2e3ea, #eadbe6);
-    --grace-text: #3f2d37; --grace-glow: rgba(143, 83, 106, .16);
+    --grace-text: #3f2d37; --grace-glow: rgba(195, 63, 112, .24);
     background: #d9ceca;
 }
 .companion-console *, .companion-console *::before, .companion-console *::after { box-sizing: border-box; }
@@ -258,7 +258,7 @@
 .chat-welcome p { font-size: 13px; margin: 0; }
 .chat-container:has(.message) .chat-welcome { display: none; }
 .companion-console .chat-container .message { position: relative; display: block; clear: both; float: left; width: fit-content; max-width: 84%; margin: 0 0 25px 46px; padding: 13px 17px; border: 1px solid var(--console-line); border-radius: 18px; color: var(--console-text); background: linear-gradient(125deg, rgba(29, 42, 43, .68), rgba(22, 32, 34, .6)); font-size: 14px; line-height: 1.55; white-space: normal; overflow: visible; box-shadow: inset 0 1px 8px #e5d1c008; animation: none; }
-.companion-console .chat-container .message.user { float: right; margin-left: 0; border-color: #85b5a4; background: linear-gradient(125deg, rgba(41, 72, 63, .7), rgba(32, 47, 45, .62)); color: #d9fff2; }
+.companion-console .chat-container .message.user { float: right; margin-left: 0; border-color: #648c79; background: linear-gradient(125deg, rgba(41, 72, 63, .7), rgba(32, 47, 45, .62)); color: #d9fff2; }
 .companion-console .chat-container .message.grace { border-color: var(--grace-line); background: linear-gradient(125deg, rgba(72, 45, 61, .68), rgba(48, 36, 50, .6)); color: var(--grace-text); }
 [data-theme="light"] .companion-console .chat-container .message { background: linear-gradient(125deg, rgba(243, 231, 227, .76), rgba(248, 241, 237, .68)); }
 [data-theme="light"] .companion-console .chat-container .message.user { background: linear-gradient(125deg, rgba(215, 235, 225, .78), rgba(198, 223, 210, .7)); color: #274337; }
@@ -268,8 +268,7 @@
 .companion-console .grace-mini-avatar { position: absolute; left: -49px; top: 2px; float: none; width: 33px; height: 33px; margin: 0; display: grid; place-items: center; border: 1px solid var(--grace-line); border-radius: 50%; background: radial-gradient(circle at 30% 20%, var(--grace-accent), #4a303f 50%, #1b1b1d); color: var(--grace-text); font-size: 20px; }
 .message-time { position: absolute; bottom: -20px; right: 4px; white-space: nowrap; font-size: 10px; color: var(--console-muted); }
 .companion-console .chat-container .message.grace .message-time { color: var(--grace-accent); }
-.companion-console .chat-container .message.user .message-time { color: #9bcdb7; }
-[data-theme="light"] .companion-console .chat-container .message.user .message-time { color: #527b65; }
+.companion-console .chat-container .message.user .message-time { color: #ace7cc; }
 .companion-console .message-metrics { display: flex; align-items: center; justify-content: flex-end; gap: 11px; margin-top: 6px; padding-top: 5px; border-top: 1px solid #ffffff17; color: var(--grace-accent); font-size: 10px; line-height: 1.2; letter-spacing: .01em; }
 .companion-console .message-metric { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .companion-console .message-metric svg { width: 11px; height: 11px; fill: currentColor; opacity: .82; }
