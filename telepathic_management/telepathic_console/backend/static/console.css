@@ -252,6 +252,9 @@
 .companion-console .chat-container .message-content { white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; }
 .companion-console .grace-mini-avatar { position: absolute; left: -49px; top: 2px; float: none; width: 33px; height: 33px; margin: 0; display: grid; place-items: center; border: 1px solid var(--grace-line); border-radius: 50%; background: radial-gradient(circle at 30% 20%, var(--grace-accent), #4a303f 50%, #1b1b1d); color: var(--grace-text); font-size: 20px; }
 .message-time { position: absolute; bottom: -20px; right: 4px; white-space: nowrap; font-size: 10px; color: var(--console-muted); }
+.companion-console .chat-container .message.grace .message-time { color: var(--grace-accent); }
+.companion-console .chat-container .message.user .message-time { color: #9bcdb7; }
+[data-theme="light"] .companion-console .chat-container .message.user .message-time { color: #527b65; }
 .companion-console .message-metrics { display: flex; align-items: center; justify-content: flex-end; gap: 11px; margin-top: 6px; padding-top: 5px; border-top: 1px solid #ffffff17; color: var(--grace-accent); font-size: 10px; line-height: 1.2; letter-spacing: .01em; }
 .companion-console .message-metric { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .companion-console .message-metric svg { width: 11px; height: 11px; fill: currentColor; opacity: .82; }

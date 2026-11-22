@@ -1,4 +1,4 @@
-        // Forward-moving digital tunnel with neon circuitry and rune markings
+        // Forward-moving neural mesh fills the chat panel
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas?.getContext('2d');
         const matrixPanel = canvas?.closest('.conversation-panel');
@@ -9,31 +9,28 @@
             // stays small even on high-DPI displays.
             canvas.width = matrixPanel.clientWidth;
             canvas.height = matrixPanel.clientHeight;
-            initTunnelGlyphs();
+            initNetworkNodes();
         }
 
-        const runeChars = Array.from('ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ');
-        const pickRune = () => runeChars[Math.floor(Math.random() * runeChars.length)];
         let networkNodes = [];
 
-        function initTunnelGlyphs() {
-            const count = Math.max(76, Math.min(132, Math.floor((canvas?.width || 800) / 7)));
+        function initNetworkNodes() {
+            const count = Math.max(100, Math.min(180, Math.floor((canvas?.width || 800) / 5)));
             networkNodes = Array.from({ length: count }, () => ({
-                x: (Math.random() * 2 - 1) * 1.25,
-                y: (Math.random() * 2 - 1) * 1.15,
+                x: (Math.random() * 2 - 1) * 1.5,
+                y: (Math.random() * 2 - 1) * 1.3,
                 z: 0.24 + Math.random() * 2.15,
                 vx: (Math.random() * 2 - 1) * 0.0036,
                 vy: (Math.random() * 2 - 1) * 0.0036,
                 vz: (Math.random() * 2 - 1) * 0.006,
                 plum: Math.random() > 0.83,
-                rune: Math.random() > 0.86 ? pickRune() : '',
                 sparkle: Math.random() > 0.8,
             }));
         }
 
         resizeCanvas();
 
-        function drawRuneTunnel() {
+        function drawNetworkMesh() {
             if (!ctx || !canvas) return;
             const { width, height } = canvas;
             const cx = width * 0.5;
@@ -51,27 +48,31 @@
             const projected = networkNodes.map((node) => {
                 node.x += node.vx;
                 node.y += node.vy;
-                // Let depth drift gently without a forward camera move, so this stays a mesh.
-                node.z += node.vz;
-                if (node.x < -1.3 || node.x > 1.3) node.vx *= -1;
-                if (node.y < -1.2 || node.y > 1.2) node.vy *= -1;
-                if (node.z < 0.24 || node.z > 2.4) node.vz *= -1;
-                const scale = 0.76 / (node.z + 0.55);
+                // Moving the camera through the field makes nearby nodes expand outward.
+                node.z -= 0.035 + node.vz;
+                if (node.x < -1.55 || node.x > 1.55) node.vx *= -1;
+                if (node.y < -1.35 || node.y > 1.35) node.vy *= -1;
+                if (node.z < 0.24) {
+                    node.z = 2.4;
+                    node.x = (Math.random() * 2 - 1) * 1.4;
+                    node.y = (Math.random() * 2 - 1) * 1.2;
+                }
+                const scale = 0.9 / (node.z + 0.45);
                 return {
                     node,
-                    x: cx + node.x * width * 0.42 * scale,
-                    y: cy + node.y * height * 0.42 * scale,
+                    x: cx + node.x * width * 0.55 * scale,
+                    y: cy + node.y * height * 0.52 * scale,
                     scale,
                 };
             });
 
-            const maxLink = Math.max(92, Math.min(168, width * 0.19));
+            const maxLink = Math.max(100, Math.min(190, width * 0.23));
             ctx.lineWidth = 0.8;
             for (let i = 0; i < projected.length; i++) {
                 const a = projected[i];
                 for (let j = i + 1; j < projected.length; j++) {
                     const b = projected[j];
-                    if (Math.abs(a.node.z - b.node.z) > 1.25) continue;
+                    if (Math.abs(a.node.z - b.node.z) > 1.45) continue;
                     const dx = a.x - b.x;
                     const dy = a.y - b.y;
                     const distance = Math.hypot(dx, dy);
@@ -95,41 +96,35 @@
                 ctx.shadowColor = color;
                 ctx.shadowBlur = node.sparkle ? 15 : 7;
                 ctx.fill();
-                if (node.rune) {
-                    ctx.font = `${Math.min(17, 8 + scale * 7)}px "Noto Sans Runic", serif`;
-                    ctx.fillStyle = node.plum ? 'rgba(239, 182, 202, .85)' : 'rgba(205, 255, 225, .82)';
-                    ctx.shadowBlur = 8;
-                    ctx.fillText(node.rune, x + radius * 1.4, y - radius * 1.2);
-                }
             }
             ctx.shadowBlur = 0;
         }
 
-        let tunnelTimer = null;
-        function syncTunnelAnimation() {
+        let networkTimer = null;
+        function syncNetworkAnimation() {
             const shouldAnimate = Boolean(canvas && matrixPanel &&
                 document.documentElement.dataset.theme === 'dark' &&
                 !document.hidden &&
                 !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
                 matrixPanel.getClientRects().length);
-            if (shouldAnimate && tunnelTimer === null) {
-                tunnelTimer = setInterval(drawRuneTunnel, 90);
-            } else if (!shouldAnimate && tunnelTimer !== null) {
-                clearInterval(tunnelTimer);
-                tunnelTimer = null;
+            if (shouldAnimate && networkTimer === null) {
+                networkTimer = setInterval(drawNetworkMesh, 90);
+            } else if (!shouldAnimate && networkTimer !== null) {
+                clearInterval(networkTimer);
+                networkTimer = null;
             }
         }
-        new MutationObserver(syncTunnelAnimation).observe(document.documentElement, {
+        new MutationObserver(syncNetworkAnimation).observe(document.documentElement, {
             attributes: true,
             attributeFilter: ['data-theme'],
         });
-        document.addEventListener('visibilitychange', syncTunnelAnimation);
+        document.addEventListener('visibilitychange', syncNetworkAnimation);
         if (matrixPanel && 'ResizeObserver' in window) {
             new ResizeObserver(resizeCanvas).observe(matrixPanel);
         } else {
             window.addEventListener('resize', resizeCanvas);
         }
-        syncTunnelAnimation();
+        syncNetworkAnimation();
 
         // Circuit elements
         function createCircuitElements() {
