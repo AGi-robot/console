@@ -6,15 +6,27 @@
   let stopped = false;
   let aivaOnline = false;
   let auroraOnline = false;
+  let inferenceActive = false;
+  let inferenceTps = 0;
 
   function updateLabel() {
     if (!label) return;
-    wave?.classList.toggle('is-active', aivaOnline);
+    wave?.classList.toggle('is-active', aivaOnline && inferenceActive);
+    if (wave) {
+      const period = Math.max(0.22, Math.min(1, 1 - inferenceTps * 0.012));
+      wave.style.setProperty('--presence-wave-duration', `${period}s`);
+    }
     if (aivaOnline && auroraOnline) label.textContent = 'AIVA + AuRoRA online';
     else if (aivaOnline) label.textContent = 'AIVA online';
     else if (auroraOnline) label.textContent = 'AuRoRA online';
     else label.textContent = 'Offline';
   }
+
+  window.addEventListener('agi-grace-inference', (event) => {
+    inferenceActive = event.detail?.active === true;
+    inferenceTps = Math.max(0, Number(event.detail?.tps) || 0);
+    updateLabel();
+  });
 
   async function refresh() {
     try {

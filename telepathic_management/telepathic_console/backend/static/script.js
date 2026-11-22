@@ -393,6 +393,8 @@
         // State variables
         let isSpeaking = false;
         let isStreaming = false;
+        let inferenceRateSamples = [];
+        let inferenceRateTimer = null;
         let idleInterval;
         let blinkInterval;
         let currentStreamMessage = null;
@@ -956,11 +958,36 @@
         }
 
         // Streaming
+        function estimateStreamTokens(text) {
+            const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+            return Math.max(1, Math.ceil(cjk / 2 + (text.length - cjk) / 4));
+        }
+
+        function updateInferenceWave(active, tps = 0) {
+            window.dispatchEvent(new CustomEvent('agi-grace-inference', {
+                detail: { active, tps: Number.isFinite(tps) ? tps : 0 },
+            }));
+        }
+
+        function refreshInferenceRate() {
+            const now = performance.now();
+            inferenceRateSamples = inferenceRateSamples.filter((sample) => now - sample.at <= 1500);
+            const recentTokens = inferenceRateSamples.reduce((sum, sample) => sum + sample.tokens, 0);
+            const sampleWindow = inferenceRateSamples.length
+                ? Math.min(1.5, Math.max(0.5, (now - inferenceRateSamples[0].at) / 1000))
+                : 0;
+            updateInferenceWave(true, sampleWindow ? recentTokens / sampleWindow : 0);
+        }
+
         function startStreaming(firstChunk) {
             if (isStreaming) return;
 
             isStreaming = true;
             isSpeaking = true;
+            inferenceRateSamples = [];
+            updateInferenceWave(true, 0);
+            clearInterval(inferenceRateTimer);
+            inferenceRateTimer = setInterval(refreshInferenceRate, 250);
             streamBuffer = firstChunk;
 
             userInput.disabled = true;
@@ -988,6 +1015,9 @@
 
         function appendToStream(delta) {
             if (!isStreaming || !currentStreamMessage) return;
+
+            if (delta) inferenceRateSamples.push({ at: performance.now(), tokens: estimateStreamTokens(delta) });
+            refreshInferenceRate();
 
             streamBuffer += delta;
 
@@ -1019,6 +1049,10 @@
         function finishStreaming(metrics = null) {
             isStreaming = false;
             isSpeaking = false;
+            updateInferenceWave(false, 0);
+            clearInterval(inferenceRateTimer);
+            inferenceRateTimer = null;
+            inferenceRateSamples = [];
 
             if (currentStreamMessage) {
                 const completedMessage = currentStreamMessage;

@@ -68,7 +68,7 @@
 }
 .presence-wave { display: inline-flex; height: 16px; align-items: center; gap: 2px; color: #ec58b4; }
 .presence-wave i { display: block; width: 3px; height: 4px; border-radius: 2px; background: currentColor; opacity: .48; transform: scaleY(.75); transform-origin: center; }
-.presence-wave.is-active i { opacity: .92; animation: presence-wave-pulse .68s ease-in-out infinite alternate; }
+.presence-wave.is-active i { opacity: .92; animation: presence-wave-pulse var(--presence-wave-duration, .68s) ease-in-out infinite alternate; }
 .presence-wave.is-active i:nth-child(2) { animation-delay: -.39s; }
 .presence-wave.is-active i:nth-child(3) { animation-delay: -.16s; }
 .presence-wave.is-active i:nth-child(4) { animation-delay: -.52s; }
