@@ -22,9 +22,9 @@
                 x: (Math.random() * 2 - 1) * 1.5,
                 y: (Math.random() * 2 - 1) * 1.3,
                 z: 0.24 + Math.random() * 2.15,
-                vx: (Math.random() * 2 - 1) * 0.0036,
-                vy: (Math.random() * 2 - 1) * 0.0036,
-                vz: (Math.random() * 2 - 1) * 0.006,
+                vx: (Math.random() * 2 - 1) * 0.0014,
+                vy: (Math.random() * 2 - 1) * 0.0014,
+                vz: (Math.random() * 2 - 1) * 0.0022,
                 plum: Math.random() > 0.83,
                 sparkle: Math.random() > 0.8,
             }));
@@ -37,7 +37,7 @@
             const { width, height } = canvas;
             const cx = width * 0.5;
             const cy = height * 0.5;
-            networkZoom = Math.min(1.55, networkZoom + 0.00035);
+            networkZoom = Math.min(1.55, networkZoom + 0.00022);
             signalPhase = (signalPhase + 0.025) % 1;
 
             ctx.fillStyle = 'rgba(8, 16, 15, 0.34)';
@@ -83,7 +83,7 @@
                         ? `rgba(198, 129, 154, ${strength * 0.72})`
                         : `rgba(172, 231, 204, ${strength})`;
                     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-                    if ((i * 31 + j * 17) % 13 === 0) {
+                    if ((i * 31 + j * 17) % 31 === 0) {
                         const phaseOffset = ((i * 11 + j * 7) % 13) / 13;
                         const t = (signalPhase + phaseOffset) % 1;
                         signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum: a.node.plum || b.node.plum });
@@ -94,9 +94,9 @@
             // Small pulses travel along a subset of the mesh edges.
             for (const signal of signalPoints) {
                 ctx.beginPath(); ctx.arc(signal.x, signal.y, 1.8, 0, Math.PI * 2);
-                ctx.fillStyle = signal.plum ? '#efb6ca' : '#e3fff0';
-                ctx.shadowColor = signal.plum ? '#c6819a' : '#ace7cc';
-                ctx.shadowBlur = 7;
+                ctx.fillStyle = signal.plum ? '#efb6ca' : '#b7ffd2';
+                ctx.shadowColor = signal.plum ? '#c6819a' : '#7ee7a6';
+                ctx.shadowBlur = 6;
                 ctx.fill();
             }
 
