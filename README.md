@@ -24,6 +24,22 @@ or Grace's entity modules. The retired AuRoRA settings editor is disabled;
 runtime configuration belongs to Shell. Unsupported image/reward topics are
 not advertised by the chat page.
 
+## Signal Garden preview
+
+Open **Flow** from the companion header, or visit `/flow`, to explore a
+browser-local simulation of the current AIVA conversation and Canvas paths.
+Grace's existing anime artwork anchors an interactive module map. Play, pause,
+step, reset, and speed controls animate ROS topics, HTTP/WebSocket connections,
+and in-process Python calls. Select a module for its role and interfaces.
+
+This is an illustrative preview: entered prompts stay in the browser and do
+not call Grace or a model. It does not observe live processes or infer module
+health. Canvas demonstrates vector tools with an illustrative vision review;
+optional MOSS imaging and passive logging are shown as separate branches.
+AuRoRA's SCS/HRM/TMS runtime is separate from this AIVA map. No additional
+frontend dependencies are needed. Rebuild the Console ROS package and restart
+Console to update an installed WebUI.
+
 ## Install
 
 Clone beside Shell at `AIVA/console`, link `shell/src/telepathic_management` to

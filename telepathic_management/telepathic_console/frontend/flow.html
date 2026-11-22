@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101719">
+  <title>Grace · Signal Garden</title>
+  <link rel="icon" href="/static/assets/favicon.svg">
+  <link rel="stylesheet" href="/static/flow/flow.css">
+  <script src="/static/flow/flow.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Grace Console home"><span class="brand-symbol">✦</span><span>GRACE <small>CONSOLE</small></span></a>
+    <nav aria-label="Console pages"><a href="/">Companion</a><a href="/canvas">Canvas</a><a href="/flow" aria-current="page">Signal Garden</a><a href="/logs">Logs</a></nav>
+    <span class="preview-badge">INTERACTIVE PREVIEW</span>
+  </header>
+  <main>
+    <section class="page-heading">
+      <div><p class="eyebrow">A LITTLE LOOK INSIDE HER WORLD</p><h1>Every thought has a journey<span>.</span></h1><p class="intro">Follow a prompt through Grace’s connected world, one signal at a time.</p></div>
+      <div class="mode-note"><span class="simulation-dot"></span><div><strong>Simulation mode</strong><span>Illustrative events · no runtime connection</span></div></div>
+    </section>
+    <div class="workspace">
+      <section class="playback" aria-labelledby="playbackHeading">
+        <div class="prompt-area"><div class="prompt-heading"><label for="prompt" id="playbackHeading">Start with a little curiosity</label><span id="scenarioLabel">CONVERSATION</span></div><textarea id="prompt" rows="2" maxlength="2000" spellcheck="false">Grace, what do you remember about our last conversation?</textarea><p id="scenarioNote">A simulated chat turn: recent memory, model inference, and a reply.</p></div>
+        <div class="playback-area"><div class="transport"><button class="play-button" id="play" type="button">▶ Simulate prompt</button><button id="step" type="button" title="Advance one event">Step</button><button id="reset" type="button" title="Reset simulation">↺ Reset</button><label class="speed-label">Speed<select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label></div><div class="progress-row"><progress id="progress" value="0" max="1" aria-label="Simulation progress"></progress><span id="stepCount">Ready</span></div><p class="current-event" id="currentEvent" role="status" aria-live="polite">Ready when you are. Press play or step through the journey.</p></div>
+      </section>
+      <section class="map-panel" aria-labelledby="mapHeading">
+        <div class="panel-toolbar"><div><span class="eyebrow">THE CONNECTION MAP</span><h2 id="mapHeading">Grace’s inner constellation</h2></div><div class="scenario-switch" role="group" aria-label="Simulation scenario"><button type="button" data-scenario="chat" aria-pressed="true">Conversation</button><button type="button" data-scenario="canvas" aria-pressed="false">Canvas</button></div></div>
+        <div class="map-scroll" tabindex="0" role="region" aria-label="Module map. Scroll horizontally on small screens; select a module to inspect it.">
+          <div class="constellation" id="constellation">
+            <span class="region-label external-region">OUTSIDE GRACE</span><span class="region-label entity-region">GRACE · AIVA RUNTIME</span>
+            <div class="entity-boundary" aria-hidden="true"></div>
+            <svg id="connections" class="connections" viewBox="0 0 1000 650" aria-hidden="true"><g id="edges"></g><circle id="packet" r="5" hidden></circle></svg>
+            <div class="grace-portrait"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><img src="/static/assets/grace-mascot.png" alt="Anime-style Grace holding a pink robot companion"><span class="portrait-caption">Amazing Grace</span><span class="portrait-subtitle" id="graceState">A world of connections</span></div>
+            <div id="nodes"></div>
+            <span class="map-hint">✧ Select a module to look closer · Scroll to explore</span>
+          </div>
+        </div>
+        <div class="map-footer"><div class="legend" aria-label="Connection types"><span><i class="ros"></i>ROS 2 topic</span><span><i class="http"></i>HTTP / WebSocket</span><span><i class="python"></i>Python call</span></div><span class="map-caption">AIVA architecture · illustrative layout</span></div>
+      </section>
+      <aside class="side-panel">
+        <section class="inspector" aria-labelledby="inspectTitle"><div class="section-label"><span class="eyebrow">UNDER THE SURFACE</span><span aria-hidden="true">⌘</span></div><div class="inspect-icon" id="inspectIcon">✦</div><p class="module-kind" id="inspectKind"></p><h2 id="inspectTitle"></h2><p id="inspectDescription"></p><dl><dt>Lives in</dt><dd id="inspectLocation"></dd><dt>Receives</dt><dd id="inspectInput"></dd><dt>Passes along</dt><dd id="inspectOutput"></dd></dl><p class="inspector-tip">Click any module on the map to explore its role.</p></section>
+        <section class="event-panel" aria-labelledby="eventHeading"><div class="section-label"><h2 id="eventHeading">Signal journal</h2><span id="eventCount">0 events</span></div><ol id="journal"><li class="empty-journal">Your prompt’s story will unfold here.</li></ol></section>
+      </aside>
+    </div>
+    <footer class="page-footer"><p><span>✦</span> A map of connections, with a little personality.</p><p>Python libraries share the receptor process. AuRoRA’s SCS / HRM / TMS belong to a separate runtime.</p></footer>
+  </main>
+</body>
+</html>

@@ -176,6 +176,11 @@ async def send_telepathic_input(request: Request) -> dict[str, str]:
     return {"identifier": identifier, "topic": envelope["topic"]}
 
 
+@app.get("/flow")
+async def flow_page():
+    return FileResponse(FRONTEND_DIR / "flow.html")
+
+
 @app.get("/canvas")
 async def canvas_page():
     return FileResponse(FRONTEND_DIR / "canvas.html")
