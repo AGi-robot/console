@@ -14,7 +14,7 @@
 
         let networkNodes = [];
         let networkEdges = [];
-        let signalPhase = 0;
+        let networkSignals = [];
 
         function connectNodeToNearbyEdges(nodeIndex) {
             const node = networkNodes[nodeIndex];
@@ -35,20 +35,6 @@
             }
         }
 
-        function fillNetworkSignalSlots() {
-            for (const [plum, targetCount] of [[true, 5], [false, 7]]) {
-                const active = networkEdges.filter((edge) => edge.plum === plum && edge.phaseOffset !== undefined).length;
-                const available = networkEdges.filter((edge) => edge.plum === plum && edge.phaseOffset === undefined);
-                let missing = targetCount - active;
-                while (missing > 0 && available.length) {
-                    const index = Math.floor(Math.random() * available.length);
-                    const [edge] = available.splice(index, 1);
-                    edge.phaseOffset = Math.random();
-                    missing--;
-                }
-            }
-        }
-
         function initNetworkNodes() {
             const count = Math.max(100, Math.min(180, Math.floor((canvas?.width || 800) / 5)));
             networkNodes = Array.from({ length: count }, () => ({
@@ -66,10 +52,14 @@
             // prevents moving signals from jumping when nearby links change.
             networkEdges = [];
             networkNodes.forEach((_, index) => connectNodeToNearbyEdges(index));
-            const plumEdges = networkEdges.filter((edge) => edge.plum);
-            const greenEdges = networkEdges.filter((edge) => !edge.plum);
-            plumEdges.slice(0, 5).forEach((edge) => { edge.phaseOffset = Math.random(); });
-            greenEdges.slice(0, 7).forEach((edge) => { edge.phaseOffset = Math.random(); });
+            networkSignals = Array.from({ length: 12 }, (_, index) => ({
+                plum: index < 5,
+                edge: null,
+                progress: 0,
+                direction: 1,
+                speed: 0,
+                wait: Math.floor(Math.random() * 12),
+            }));
         }
 
         resizeCanvas();
@@ -79,8 +69,6 @@
             const { width, height } = canvas;
             const cx = width * 0.5;
             const cy = height * 0.5;
-            signalPhase = (signalPhase + 0.045) % 1;
-
             ctx.fillStyle = 'rgba(8, 16, 15, 0.46)';
             ctx.fillRect(0, 0, width, height);
             const glow = ctx.createRadialGradient(cx, cy, 1, cx, cy, Math.min(width, height) * 0.72);
@@ -104,7 +92,6 @@
                     node.y = (Math.random() * 2 - 1) * 1.3;
                     networkEdges = networkEdges.filter((edge) => edge.a !== nodeIndex && edge.b !== nodeIndex);
                     connectNodeToNearbyEdges(nodeIndex);
-                    fillNetworkSignalSlots();
                 }
                 const scale = 0.9 / (node.z + 0.45);
                 return {
@@ -116,7 +103,7 @@
             });
 
             const maxLink = Math.max(100, Math.min(190, width * 0.23));
-            const signalPoints = [];
+            const visibleEdges = [];
             ctx.lineWidth = 0.8;
             for (const edge of networkEdges) {
                 const a = projected[edge.a];
@@ -131,15 +118,35 @@
                     ? `rgba(198, 129, 154, ${strength * 0.72})`
                     : `rgba(172, 231, 204, ${strength})`;
                 ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-                if (edge.phaseOffset !== undefined) {
-                    const t = (signalPhase + edge.phaseOffset) % 1;
-                    signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum: edge.plum });
-                }
+                visibleEdges.push({ edge, a, b });
             }
 
-            // Pulses use the same endpoints as the visible edge and stay on it.
-            for (const signal of signalPoints) {
-                ctx.beginPath(); ctx.arc(signal.x, signal.y, 1.8, 0, Math.PI * 2);
+            // Each pulse chooses its own colored edge, speed, direction, and
+            // pause. Its position is interpolated only along that visible edge.
+            for (const signal of networkSignals) {
+                if (signal.wait > 0) {
+                    signal.wait--;
+                    continue;
+                }
+                let visible = signal.edge && visibleEdges.find((entry) => entry.edge === signal.edge);
+                if (!visible) {
+                    const candidates = visibleEdges.filter((entry) => entry.edge.plum === signal.plum);
+                    if (!candidates.length) continue;
+                    visible = candidates[Math.floor(Math.random() * candidates.length)];
+                    signal.edge = visible.edge;
+                    signal.direction = Math.random() < 0.5 ? -1 : 1;
+                    signal.progress = signal.direction > 0 ? 0 : 1;
+                    signal.speed = 0.035 + Math.random() * 0.045;
+                }
+                signal.progress += signal.speed * signal.direction;
+                if (signal.progress < 0 || signal.progress > 1) {
+                    signal.edge = null;
+                    signal.wait = Math.floor(Math.random() * 10);
+                    continue;
+                }
+                const x = visible.a.x + (visible.b.x - visible.a.x) * signal.progress;
+                const y = visible.a.y + (visible.b.y - visible.a.y) * signal.progress;
+                ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2);
                 ctx.fillStyle = signal.plum ? '#efb6ca' : '#b7ffd2';
                 ctx.shadowColor = signal.plum ? '#c6819a' : '#7ee7a6';
                 ctx.shadowBlur = 6;
