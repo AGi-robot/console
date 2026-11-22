@@ -1,4 +1,4 @@
-        // Mint rune tunnel, streaming outward from its vanishing point
+        // Forward-moving digital tunnel with neon circuitry and rune markings
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas?.getContext('2d');
         const matrixPanel = canvas?.closest('.conversation-panel');
@@ -13,21 +13,34 @@
         }
 
         const runeChars = Array.from('ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ');
-        const tunnelGlyphCount = 76;
-        let tunnelGlyphs = [];
-
-        function randomTunnelGlyph() {
-            return {
-                angle: Math.random() * Math.PI * 2,
-                depth: 0.025 + Math.random() * 0.98,
-                speed: 0.006 + Math.random() * 0.014,
-                rune: runeChars[Math.floor(Math.random() * runeChars.length)],
-                bright: Math.random() > 0.84,
-            };
-        }
+        const pickRune = () => runeChars[Math.floor(Math.random() * runeChars.length)];
+        let circuitPaths = [];
+        let tunnelRunes = [];
+        let tunnelPhase = 0;
 
         function initTunnelGlyphs() {
-            tunnelGlyphs = Array.from({ length: tunnelGlyphCount }, randomTunnelGlyph);
+            circuitPaths = Array.from({ length: 28 }, () => {
+                const u = 0.2 + Math.random() * 0.6;
+                const jog = (Math.random() > 0.5 ? 1 : -1) * (0.12 + Math.random() * 0.2);
+                const joggedU = Math.max(0.06, Math.min(0.94, u + jog));
+                const returnU = Math.max(0.06, Math.min(0.94, u - jog * 0.35));
+                return {
+                    face: Math.floor(Math.random() * 8),
+                    start: Math.random(),
+                    points: [
+                        [0, u], [0.07, u], [0.07, joggedU],
+                        [0.2, joggedU], [0.2, returnU], [0.3, returnU],
+                    ],
+                    bright: Math.random() > 0.62,
+                };
+            });
+            tunnelRunes = Array.from({ length: 38 }, () => ({
+                face: Math.floor(Math.random() * 8),
+                u: 0.15 + Math.random() * 0.7,
+                depth: Math.random(),
+                rune: pickRune(),
+                bright: Math.random() > 0.58,
+            }));
         }
 
         resizeCanvas();
@@ -36,51 +49,97 @@
             if (!ctx || !canvas) return;
             const { width, height } = canvas;
             const cx = width * 0.5;
-            const cy = height * 0.49;
-            const radiusX = Math.hypot(width, height) * 0.62;
-            const radiusY = Math.hypot(width, height) * 0.46;
+            const cy = height * 0.5;
+            const rx = width * 0.78;
+            const ry = height * 0.78;
+            tunnelPhase = (tunnelPhase + 0.009) % 1;
 
-            // A translucent clear leaves short trails that reinforce outward motion.
-            ctx.fillStyle = 'rgba(16, 23, 25, 0.30)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Short luminous trails leave depth cues without obscuring messages.
+            ctx.fillStyle = 'rgba(10, 18, 16, 0.24)';
+            ctx.fillRect(0, 0, width, height);
+            const glow = ctx.createRadialGradient(cx, cy, 1, cx, cy, Math.min(width, height) * 0.72);
+            glow.addColorStop(0, 'rgba(172, 255, 215, 0.34)');
+            glow.addColorStop(0.35, 'rgba(49, 205, 137, 0.12)');
+            glow.addColorStop(1, 'rgba(20, 90, 64, 0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 0, width, height);
 
-            // Perspective spokes and nested rings give the field a tunnel shape.
+            const project = (depth, angle) => {
+                const scale = 0.045 + depth * depth * 0.96;
+                const a = angle * Math.PI * 2 / 8 - Math.PI / 8;
+                return { x: cx + Math.cos(a) * rx * scale, y: cy + Math.sin(a) * ry * scale };
+            };
+            const facePoint = (face, u, depth) => {
+                const a = project(depth, face);
+                const b = project(depth, face + 1);
+                return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u };
+            };
+
+            // Eight neon rails form a polygonal tunnel, with rings advancing toward the viewer.
             ctx.save();
-            ctx.strokeStyle = 'rgba(172, 231, 204, 0.11)';
             ctx.lineWidth = 1;
-            for (let i = 0; i < 16; i++) {
-                const angle = (i / 16) * Math.PI * 2;
+            for (let face = 0; face < 8; face++) {
+                const a = project(0.02, face);
+                const b = project(0.02, face + 1);
+                const c = project(1, face + 1);
+                const d = project(1, face);
                 ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + Math.cos(angle) * radiusX, cy + Math.sin(angle) * radiusY);
+                ctx.moveTo(a.x, a.y); ctx.lineTo(d.x, d.y);
+                ctx.strokeStyle = 'rgba(73, 220, 150, 0.25)';
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+                ctx.lineTo(c.x, c.y);
+                ctx.strokeStyle = 'rgba(88, 244, 171, 0.14)';
                 ctx.stroke();
             }
-            for (let i = 1; i <= 7; i++) {
-                const depth = i / 8;
+            for (let i = 0; i < 11; i++) {
+                const depth = (i / 11 + tunnelPhase) % 1;
                 ctx.beginPath();
-                ctx.ellipse(cx, cy, radiusX * depth, radiusY * depth, 0, 0, Math.PI * 2);
+                for (let face = 0; face <= 8; face++) {
+                    const p = project(depth, face);
+                    if (face === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+                }
+                const alpha = 0.12 + depth * 0.38;
+                ctx.strokeStyle = `rgba(90, 255, 174, ${alpha})`;
+                ctx.shadowColor = '#43f59a';
+                ctx.shadowBlur = depth > 0.82 ? 13 : 5;
                 ctx.stroke();
+            }
+
+            // Circuit traces run along tunnel panels, turn at right angles, and end in lit nodes.
+            for (const path of circuitPaths) {
+                const pathDepth = (path.start + tunnelPhase) % 1;
+                if (pathDepth > 0.7) continue;
+                const pts = path.points.map(([offset, u]) => facePoint(path.face, u, pathDepth + offset * 0.22));
+                ctx.beginPath();
+                pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+                ctx.strokeStyle = path.bright ? 'rgba(137, 255, 190, 0.82)' : 'rgba(67, 218, 143, 0.52)';
+                ctx.lineWidth = path.bright ? 1.5 : 1;
+                ctx.shadowColor = '#35ed91';
+                ctx.shadowBlur = path.bright ? 9 : 5;
+                ctx.stroke();
+                const tip = pts[pts.length - 1];
+                ctx.beginPath();
+                ctx.arc(tip.x, tip.y, path.bright ? 2.4 : 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#c0ffda';
+                ctx.fill();
+            }
+
+            // Runic status marks ride the circuitry and grow brighter near the viewer.
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (const mark of tunnelRunes) {
+                const depth = (mark.depth + tunnelPhase) % 1;
+                const p = facePoint(mark.face, mark.u, depth);
+                const size = 8 + depth * (mark.bright ? 20 : 12);
+                ctx.font = `${size}px "Noto Sans Runic", serif`;
+                ctx.fillStyle = mark.bright ? 'rgba(200, 255, 222, .92)' : `rgba(93, 231, 158, ${0.38 + depth * 0.45})`;
+                ctx.shadowColor = '#54f5a2';
+                ctx.shadowBlur = mark.bright ? 10 : 5;
+                ctx.fillText(mark.rune, p.x, p.y);
             }
             ctx.restore();
-
-            for (const glyph of tunnelGlyphs) {
-                glyph.depth += glyph.speed;
-                if (glyph.depth >= 1) Object.assign(glyph, randomTunnelGlyph(), { depth: 0.025 });
-
-                const x = cx + Math.cos(glyph.angle) * radiusX * glyph.depth;
-                const y = cy + Math.sin(glyph.angle) * radiusY * glyph.depth;
-                const size = 6 + glyph.depth * (glyph.bright ? 25 : 17);
-                const alpha = 0.16 + glyph.depth * 0.58;
-                ctx.font = `${size}px "Noto Sans Runic", serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = glyph.bright
-                    ? `rgba(224, 255, 240, ${Math.min(0.92, alpha + 0.14)})`
-                    : `rgba(172, 231, 204, ${alpha})`;
-                ctx.shadowColor = '#ace7cc';
-                ctx.shadowBlur = glyph.bright ? 11 : 4;
-                ctx.fillText(glyph.rune, x, y);
-            }
             ctx.shadowBlur = 0;
         }
 
