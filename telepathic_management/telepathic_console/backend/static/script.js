@@ -13,6 +13,7 @@
         }
 
         let networkNodes = [];
+        let networkEdges = [];
         let networkZoom = 1;
         let signalPhase = 0;
 
@@ -29,6 +30,36 @@
                 sparkle: Math.random() > 0.8,
             }));
 
+            // Build a dense local graph once. Keeping these node pairs fixed
+            // prevents moving signals from jumping when nearby links change.
+            const edgeKeys = new Set();
+            networkEdges = [];
+            networkNodes.forEach((node, i) => {
+                const nearest = networkNodes
+                    .map((other, j) => ({
+                        j,
+                        distance: Math.hypot(node.x - other.x, node.y - other.y, (node.z - other.z) * 0.65),
+                    }))
+                    .filter((candidate) => candidate.j !== i)
+                    .sort((a, b) => a.distance - b.distance)
+                    .slice(0, 5);
+                for (const candidate of nearest) {
+                    const a = Math.min(i, candidate.j);
+                    const b = Math.max(i, candidate.j);
+                    const key = `${a}:${b}`;
+                    if (edgeKeys.has(key)) continue;
+                    edgeKeys.add(key);
+                    networkEdges.push({ a, b, plum: networkNodes[a].plum || networkNodes[b].plum });
+                }
+            });
+
+            const plumEdges = networkEdges.filter((edge) => edge.plum);
+            const greenEdges = networkEdges.filter((edge) => !edge.plum);
+            const signalEdges = [
+                ...plumEdges.filter((_, index) => index % Math.max(1, Math.ceil(plumEdges.length / 5)) === 0).slice(0, 5),
+                ...greenEdges.filter((_, index) => index % Math.max(1, Math.ceil(greenEdges.length / 7)) === 0).slice(0, 7),
+            ];
+            signalEdges.forEach((edge, index) => { edge.phaseOffset = (index * 0.173) % 1; });
         }
 
         resizeCanvas();
@@ -70,26 +101,22 @@
             const maxLink = Math.max(100, Math.min(190, width * 0.23));
             const signalPoints = [];
             ctx.lineWidth = 0.8;
-            for (let i = 0; i < projected.length; i++) {
-                const a = projected[i];
-                for (let j = i + 1; j < projected.length; j++) {
-                    const b = projected[j];
-                    if (Math.abs(a.node.z - b.node.z) > 1.45) continue;
-                    const dx = b.x - a.x;
-                    const dy = b.y - a.y;
-                    const distance = Math.hypot(dx, dy);
-                    if (distance >= maxLink) continue;
-                    const strength = (1 - distance / maxLink) * (0.18 + 0.2 / (1 + Math.min(a.node.z, b.node.z)));
-                    const plum = a.node.plum || b.node.plum;
-                    ctx.strokeStyle = plum
-                        ? `rgba(198, 129, 154, ${strength * 0.72})`
-                        : `rgba(172, 231, 204, ${strength})`;
-                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-                    if ((i * 31 + j * 17) % 41 === 0) {
-                        const phaseOffset = ((i * 11 + j * 7) % 13) / 13;
-                        const t = (signalPhase + phaseOffset) % 1;
-                        signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum });
-                    }
+            for (const edge of networkEdges) {
+                const a = projected[edge.a];
+                const b = projected[edge.b];
+                if (Math.abs(a.node.z - b.node.z) > 1.45) continue;
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const distance = Math.hypot(dx, dy);
+                if (distance >= maxLink) continue;
+                const strength = (1 - distance / maxLink) * (0.18 + 0.2 / (1 + Math.min(a.node.z, b.node.z)));
+                ctx.strokeStyle = edge.plum
+                    ? `rgba(198, 129, 154, ${strength * 0.72})`
+                    : `rgba(172, 231, 204, ${strength})`;
+                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                if (edge.phaseOffset !== undefined) {
+                    const t = (signalPhase + edge.phaseOffset) % 1;
+                    signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum: edge.plum });
                 }
             }
 
