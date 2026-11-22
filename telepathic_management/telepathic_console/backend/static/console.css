@@ -61,12 +61,14 @@
 .connection-bar::after { transform: scaleX(-1); }
 .companion-console .status-badge { margin: 0 16px; padding: 9px 25px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid color-mix(in srgb, var(--console-accent) 42%, var(--console-line)); border-radius: 0 0 22px 22px; background: var(--console-panel); box-shadow: 0 0 12px color-mix(in srgb, var(--console-accent) 10%, transparent); color: var(--console-text); font-size: 13px; }
 .companion-console .status-dot { width: 10px; height: 10px; flex: 0 0 10px; background: #d69766; box-shadow: none; animation: none; }
-.companion-console .status-dot.connected { background: #baffdf; box-shadow: 0 0 12px 2px rgba(172, 231, 204, .8); animation: connected-pulse 1.4s ease-in-out infinite; }
+.companion-console .status-dot.connected { background: var(--console-accent); box-shadow: 0 0 12px 2px color-mix(in srgb, var(--console-accent) 80%, transparent); animation: connected-pulse 1.4s ease-in-out infinite; }
+.companion-console .status-dot.connected + #statusText { color: var(--console-accent); }
+.companion-console .status-dot:not(.connected) + #statusText { color: #d69766; }
 @keyframes connected-pulse {
-    0%, 100% { opacity: .78; box-shadow: 0 0 7px 1px rgba(172, 231, 204, .55); }
-    50% { opacity: 1; box-shadow: 0 0 15px 4px rgba(172, 231, 204, .9); }
+    0%, 100% { opacity: .78; box-shadow: 0 0 7px 1px color-mix(in srgb, var(--console-accent) 55%, transparent); }
+    50% { opacity: 1; box-shadow: 0 0 15px 4px color-mix(in srgb, var(--console-accent) 90%, transparent); }
 }
-.presence-wave { display: inline-flex; height: 16px; align-items: center; gap: 2px; color: #ec58b4; }
+.presence-wave { display: inline-flex; height: 16px; align-items: center; gap: 2px; color: var(--grace-accent); }
 .presence-wave i { display: block; width: 3px; height: 4px; border-radius: 2px; background: currentColor; opacity: .48; transform: scaleY(.75); transform-origin: center; }
 .presence-wave.is-active i { opacity: .92; animation: presence-wave-pulse var(--presence-wave-duration, .68s) ease-in-out infinite alternate; }
 .presence-wave.is-active i:nth-child(2) { animation-delay: -.39s; }
@@ -77,6 +79,7 @@
     to { transform: scaleY(3.2); }
 }
 .companion-console .presence-divider { width: 1px; height: 18px; margin: 0 10px; background: var(--console-line); }
+.companion-console #aivaPresence { color: var(--grace-accent); }
 .companion-layout { display: grid; grid-template-columns: minmax(300px, 40%) minmax(0, 1fr); flex: 1; min-height: 0; gap: 12px; padding: 10px 16px 16px 0; }
 .chamber-panel { position: relative; min-height: 0; overflow: hidden; border-radius: 0 0 0 15px; }
 .chamber-visual-layer { position: absolute; inset: 0; overflow: hidden; transform: scale(1); transform-origin: 50% 45%; transition: transform 320ms ease, background-color 320ms ease; }

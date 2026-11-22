@@ -7,24 +7,33 @@
   let aivaOnline = false;
   let auroraOnline = false;
   let inferenceActive = false;
+  let inferenceResponding = false;
+  let agenticWorkActive = false;
   let inferenceTps = 0;
 
   function updateLabel() {
     if (!label) return;
-    wave?.classList.toggle('is-active', aivaOnline && inferenceActive);
+    wave?.classList.toggle('is-active', aivaOnline && (inferenceActive || agenticWorkActive));
     if (wave) {
       const period = Math.max(0.22, Math.min(1, 1 - inferenceTps * 0.012));
       wave.style.setProperty('--presence-wave-duration', `${period}s`);
     }
-    if (aivaOnline && auroraOnline) label.textContent = 'AIVA + AuRoRA online';
-    else if (aivaOnline) label.textContent = 'AIVA online';
-    else if (auroraOnline) label.textContent = 'AuRoRA online';
-    else label.textContent = 'Offline';
+    if (!aivaOnline) label.textContent = 'Grace is resting';
+    else if (agenticWorkActive) label.textContent = 'Grace is working';
+    else if (inferenceActive && inferenceResponding) label.textContent = 'Grace is responding';
+    else if (inferenceActive) label.textContent = 'Grace is thinking';
+    else label.textContent = 'Grace is waiting';
   }
 
   window.addEventListener('agi-grace-inference', (event) => {
     inferenceActive = event.detail?.active === true;
+    inferenceResponding = event.detail?.responding === true;
     inferenceTps = Math.max(0, Number(event.detail?.tps) || 0);
+    updateLabel();
+  });
+
+  window.addEventListener('agi-grace-agentic-work', (event) => {
+    agenticWorkActive = event.detail?.active === true;
     updateLabel();
   });
 
@@ -50,5 +59,6 @@
   }
 
   window.addEventListener('pagehide', () => { stopped = true; }, { once: true });
+  updateLabel();
   refresh();
 })();

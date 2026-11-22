@@ -395,6 +395,7 @@
         let isStreaming = false;
         let inferenceRateSamples = [];
         let inferenceRateTimer = null;
+        let inferenceHasResponse = false;
         let idleInterval;
         let blinkInterval;
         let currentStreamMessage = null;
@@ -732,7 +733,11 @@
                 textResponseTopic.subscribe((msg) => {
                     try {
                         const data = JSON.parse(msg.data);
-                        if (data.type === 'start') {
+                        if (data.type === 'canvas_start') {
+                            updateAgenticWork(true);
+                        } else if (data.type === 'canvas_done' || data.type === 'canvas_error') {
+                            updateAgenticWork(false);
+                        } else if (data.type === 'start') {
                             detectAndSetEmotion(data.content);
                             startStreaming(data.content);
                         } else if (data.type === 'delta') {
@@ -965,8 +970,12 @@
 
         function updateInferenceWave(active, tps = 0) {
             window.dispatchEvent(new CustomEvent('agi-grace-inference', {
-                detail: { active, tps: Number.isFinite(tps) ? tps : 0 },
+                detail: { active, responding: active && inferenceHasResponse, tps: Number.isFinite(tps) ? tps : 0 },
             }));
+        }
+
+        function updateAgenticWork(active) {
+            window.dispatchEvent(new CustomEvent('agi-grace-agentic-work', { detail: { active } }));
         }
 
         function refreshInferenceRate() {
@@ -984,6 +993,7 @@
 
             isStreaming = true;
             isSpeaking = true;
+            inferenceHasResponse = false;
             inferenceRateSamples = [];
             updateInferenceWave(true, 0);
             clearInterval(inferenceRateTimer);
@@ -1016,7 +1026,10 @@
         function appendToStream(delta) {
             if (!isStreaming || !currentStreamMessage) return;
 
-            if (delta) inferenceRateSamples.push({ at: performance.now(), tokens: estimateStreamTokens(delta) });
+            if (delta) {
+                inferenceHasResponse = true;
+                inferenceRateSamples.push({ at: performance.now(), tokens: estimateStreamTokens(delta) });
+            }
             refreshInferenceRate();
 
             streamBuffer += delta;
@@ -1050,6 +1063,7 @@
             isStreaming = false;
             isSpeaking = false;
             updateInferenceWave(false, 0);
+            inferenceHasResponse = false;
             clearInterval(inferenceRateTimer);
             inferenceRateTimer = null;
             inferenceRateSamples = [];
