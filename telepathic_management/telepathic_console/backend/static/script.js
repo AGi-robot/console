@@ -13,8 +13,6 @@
         }
 
         let networkNodes = [];
-        let networkEdges = [];
-        let networkSignalEdges = [];
         let networkZoom = 1;
         let signalPhase = 0;
 
@@ -31,35 +29,6 @@
                 sparkle: Math.random() > 0.8,
             }));
 
-            // Keep the topology stable so each signal follows a visible edge
-            // instead of jumping between connections as the mesh moves.
-            const edgeKeys = new Set();
-            networkEdges = [];
-            networkNodes.forEach((node, i) => {
-                const nearest = networkNodes
-                    .map((other, j) => ({
-                        j,
-                        distance: Math.hypot(node.x - other.x, node.y - other.y, (node.z - other.z) * 0.65),
-                    }))
-                    .filter((candidate) => candidate.j !== i)
-                    .sort((a, b) => a.distance - b.distance)
-                    .slice(0, 3);
-                for (const candidate of nearest) {
-                    const a = Math.min(i, candidate.j);
-                    const b = Math.max(i, candidate.j);
-                    const key = `${a}:${b}`;
-                    if (edgeKeys.has(key)) continue;
-                    edgeKeys.add(key);
-                    networkEdges.push({ a, b, plum: networkNodes[a].plum || networkNodes[b].plum });
-                }
-            });
-
-            const plumEdges = networkEdges.filter((edge) => edge.plum);
-            const greenEdges = networkEdges.filter((edge) => !edge.plum);
-            networkSignalEdges = [
-                ...plumEdges.filter((_, index) => index % Math.max(1, Math.ceil(plumEdges.length / 5)) === 0).slice(0, 5),
-                ...greenEdges.filter((_, index) => index % Math.max(1, Math.ceil(greenEdges.length / 7)) === 0).slice(0, 7),
-            ].map((edge, index) => ({ ...edge, phaseOffset: (index * 0.173) % 1 }));
         }
 
         resizeCanvas();
@@ -70,7 +39,7 @@
             const cx = width * 0.5;
             const cy = height * 0.5;
             networkZoom = Math.min(1.9, networkZoom + 0.001);
-            signalPhase = (signalPhase + 0.025) % 1;
+            signalPhase = (signalPhase + 0.045) % 1;
 
             ctx.fillStyle = 'rgba(8, 16, 15, 0.46)';
             ctx.fillRect(0, 0, width, height);
@@ -98,28 +67,37 @@
                 };
             });
 
+            const maxLink = Math.max(100, Math.min(190, width * 0.23));
+            const signalPoints = [];
             ctx.lineWidth = 0.8;
-            for (const edge of networkEdges) {
-                const a = projected[edge.a];
-                const b = projected[edge.b];
-                const strength = 0.2 + 0.14 / (1 + Math.min(a.node.z, b.node.z));
-                ctx.strokeStyle = edge.plum
-                    ? `rgba(198, 129, 154, ${strength * 0.82})`
-                    : `rgba(172, 231, 204, ${strength})`;
-                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            for (let i = 0; i < projected.length; i++) {
+                const a = projected[i];
+                for (let j = i + 1; j < projected.length; j++) {
+                    const b = projected[j];
+                    if (Math.abs(a.node.z - b.node.z) > 1.45) continue;
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const distance = Math.hypot(dx, dy);
+                    if (distance >= maxLink) continue;
+                    const strength = (1 - distance / maxLink) * (0.18 + 0.2 / (1 + Math.min(a.node.z, b.node.z)));
+                    const plum = a.node.plum || b.node.plum;
+                    ctx.strokeStyle = plum
+                        ? `rgba(198, 129, 154, ${strength * 0.72})`
+                        : `rgba(172, 231, 204, ${strength})`;
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                    if ((i * 31 + j * 17) % 41 === 0) {
+                        const phaseOffset = ((i * 11 + j * 7) % 13) / 13;
+                        const t = (signalPhase + phaseOffset) % 1;
+                        signalPoints.push({ x: a.x + dx * t, y: a.y + dy * t, plum });
+                    }
+                }
             }
 
-            // A small set of plum and green pulses travel directly between
-            // the endpoints of the same persistent mesh edges drawn above.
-            for (const edge of networkSignalEdges) {
-                const a = projected[edge.a];
-                const b = projected[edge.b];
-                const t = (signalPhase + edge.phaseOffset) % 1;
-                const x = a.x + (b.x - a.x) * t;
-                const y = a.y + (b.y - a.y) * t;
-                ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2);
-                ctx.fillStyle = edge.plum ? '#efb6ca' : '#b7ffd2';
-                ctx.shadowColor = edge.plum ? '#c6819a' : '#7ee7a6';
+            // Pulses use the same endpoints as the visible edge and stay on it.
+            for (const signal of signalPoints) {
+                ctx.beginPath(); ctx.arc(signal.x, signal.y, 1.8, 0, Math.PI * 2);
+                ctx.fillStyle = signal.plum ? '#efb6ca' : '#b7ffd2';
+                ctx.shadowColor = signal.plum ? '#c6819a' : '#7ee7a6';
                 ctx.shadowBlur = 6;
                 ctx.fill();
             }
