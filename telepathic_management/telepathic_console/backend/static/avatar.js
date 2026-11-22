@@ -9,7 +9,7 @@
   const fullFrame = document.querySelector('.probe-full-frame');
   const cameraViews = {
     full: { distance: 2.3, targetHeight: 0.52 },
-    portrait: { distance: 0.62, targetHeight: 0.8 },
+    portrait: { distance: 0.8113, targetHeight: 0.82 },
   };
   const cameraFov = 30;
 
@@ -181,7 +181,7 @@
       const resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(canvas);
       avatar = { renderer, scene, camera, vrm, modelHeight, restPose: rememberRestPose(vrm), baseY: vrm.scene.position.y, clock: new THREE.Clock(), resize };
-      vrm.expressionManager?.setValue('blink', 1 - 0.55 * awakeBlend);
+      vrm.expressionManager?.setValue('blink', 0.88 - 0.3 * awakeBlend);
       resize();
       // Capture the loaded model itself for the header and conversation badges.
       const selectedMode = cameraMode;
@@ -219,7 +219,7 @@
     awakeBlend += ((aivaOnline ? 1 : 0) - awakeBlend) * Math.min(delta * 1.8, 1);
     avatar.vrm.scene.position.y = avatar.baseY + (reducedMotion ? 0 : Math.sin(idleTime * 0.8) * avatar.modelHeight * 0.006);
     applyIdle();
-    avatar.vrm.expressionManager?.setValue('blink', 1 - 0.55 * awakeBlend);
+    avatar.vrm.expressionManager?.setValue('blink', 0.88 - 0.3 * awakeBlend);
     avatar.vrm.update(delta);
     avatar.renderer.render(avatar.scene, avatar.camera);
   }

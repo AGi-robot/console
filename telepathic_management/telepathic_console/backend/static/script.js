@@ -14,32 +14,20 @@
 
         const runeChars = Array.from('ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ');
         const pickRune = () => runeChars[Math.floor(Math.random() * runeChars.length)];
-        let circuitPaths = [];
-        let tunnelRunes = [];
-        let tunnelPhase = 0;
+        let networkNodes = [];
 
         function initTunnelGlyphs() {
-            circuitPaths = Array.from({ length: 28 }, () => {
-                const u = 0.2 + Math.random() * 0.6;
-                const jog = (Math.random() > 0.5 ? 1 : -1) * (0.12 + Math.random() * 0.2);
-                const joggedU = Math.max(0.06, Math.min(0.94, u + jog));
-                const returnU = Math.max(0.06, Math.min(0.94, u - jog * 0.35));
-                return {
-                    face: Math.floor(Math.random() * 8),
-                    start: Math.random(),
-                    points: [
-                        [0, u], [0.07, u], [0.07, joggedU],
-                        [0.2, joggedU], [0.2, returnU], [0.3, returnU],
-                    ],
-                    bright: Math.random() > 0.62,
-                };
-            });
-            tunnelRunes = Array.from({ length: 38 }, () => ({
-                face: Math.floor(Math.random() * 8),
-                u: 0.15 + Math.random() * 0.7,
-                depth: Math.random(),
-                rune: pickRune(),
-                bright: Math.random() > 0.58,
+            const count = Math.max(76, Math.min(132, Math.floor((canvas?.width || 800) / 7)));
+            networkNodes = Array.from({ length: count }, () => ({
+                x: (Math.random() * 2 - 1) * 1.25,
+                y: (Math.random() * 2 - 1) * 1.15,
+                z: 0.24 + Math.random() * 2.15,
+                vx: (Math.random() * 2 - 1) * 0.0036,
+                vy: (Math.random() * 2 - 1) * 0.0036,
+                vz: (Math.random() * 2 - 1) * 0.006,
+                plum: Math.random() > 0.83,
+                rune: Math.random() > 0.86 ? pickRune() : '',
+                sparkle: Math.random() > 0.8,
             }));
         }
 
@@ -50,96 +38,70 @@
             const { width, height } = canvas;
             const cx = width * 0.5;
             const cy = height * 0.5;
-            const rx = width * 0.78;
-            const ry = height * 0.78;
-            tunnelPhase = (tunnelPhase + 0.009) % 1;
 
-            // Short luminous trails leave depth cues without obscuring messages.
-            ctx.fillStyle = 'rgba(10, 18, 16, 0.24)';
+            ctx.fillStyle = 'rgba(8, 16, 15, 0.34)';
             ctx.fillRect(0, 0, width, height);
             const glow = ctx.createRadialGradient(cx, cy, 1, cx, cy, Math.min(width, height) * 0.72);
-            glow.addColorStop(0, 'rgba(172, 255, 215, 0.34)');
-            glow.addColorStop(0.35, 'rgba(49, 205, 137, 0.12)');
-            glow.addColorStop(1, 'rgba(20, 90, 64, 0)');
+            glow.addColorStop(0, 'rgba(172, 231, 204, 0.13)');
+            glow.addColorStop(0.48, 'rgba(198, 129, 154, 0.035)');
+            glow.addColorStop(1, 'rgba(8, 36, 25, 0)');
             ctx.fillStyle = glow;
             ctx.fillRect(0, 0, width, height);
 
-            const project = (depth, angle) => {
-                const scale = 0.045 + depth * depth * 0.96;
-                const a = angle * Math.PI * 2 / 8 - Math.PI / 8;
-                return { x: cx + Math.cos(a) * rx * scale, y: cy + Math.sin(a) * ry * scale };
-            };
-            const facePoint = (face, u, depth) => {
-                const a = project(depth, face);
-                const b = project(depth, face + 1);
-                return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u };
-            };
+            const projected = networkNodes.map((node) => {
+                node.x += node.vx;
+                node.y += node.vy;
+                // Let depth drift gently without a forward camera move, so this stays a mesh.
+                node.z += node.vz;
+                if (node.x < -1.3 || node.x > 1.3) node.vx *= -1;
+                if (node.y < -1.2 || node.y > 1.2) node.vy *= -1;
+                if (node.z < 0.24 || node.z > 2.4) node.vz *= -1;
+                const scale = 0.76 / (node.z + 0.55);
+                return {
+                    node,
+                    x: cx + node.x * width * 0.42 * scale,
+                    y: cy + node.y * height * 0.42 * scale,
+                    scale,
+                };
+            });
 
-            // Eight neon rails form a polygonal tunnel, with rings advancing toward the viewer.
-            ctx.save();
-            ctx.lineWidth = 1;
-            for (let face = 0; face < 8; face++) {
-                const a = project(0.02, face);
-                const b = project(0.02, face + 1);
-                const c = project(1, face + 1);
-                const d = project(1, face);
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y); ctx.lineTo(d.x, d.y);
-                ctx.strokeStyle = 'rgba(73, 220, 150, 0.25)';
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-                ctx.lineTo(c.x, c.y);
-                ctx.strokeStyle = 'rgba(88, 244, 171, 0.14)';
-                ctx.stroke();
-            }
-            for (let i = 0; i < 11; i++) {
-                const depth = (i / 11 + tunnelPhase) % 1;
-                ctx.beginPath();
-                for (let face = 0; face <= 8; face++) {
-                    const p = project(depth, face);
-                    if (face === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            const maxLink = Math.max(92, Math.min(168, width * 0.19));
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < projected.length; i++) {
+                const a = projected[i];
+                for (let j = i + 1; j < projected.length; j++) {
+                    const b = projected[j];
+                    if (Math.abs(a.node.z - b.node.z) > 1.25) continue;
+                    const dx = a.x - b.x;
+                    const dy = a.y - b.y;
+                    const distance = Math.hypot(dx, dy);
+                    if (distance >= maxLink) continue;
+                    const strength = (1 - distance / maxLink) * (0.18 + 0.2 / (1 + Math.min(a.node.z, b.node.z)));
+                    ctx.strokeStyle = a.node.plum || b.node.plum
+                        ? `rgba(198, 129, 154, ${strength * 0.72})`
+                        : `rgba(172, 231, 204, ${strength})`;
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
                 }
-                const alpha = 0.12 + depth * 0.38;
-                ctx.strokeStyle = `rgba(90, 255, 174, ${alpha})`;
-                ctx.shadowColor = '#43f59a';
-                ctx.shadowBlur = depth > 0.82 ? 13 : 5;
-                ctx.stroke();
             }
 
-            // Circuit traces run along tunnel panels, turn at right angles, and end in lit nodes.
-            for (const path of circuitPaths) {
-                const pathDepth = (path.start + tunnelPhase) % 1;
-                if (pathDepth > 0.7) continue;
-                const pts = path.points.map(([offset, u]) => facePoint(path.face, u, pathDepth + offset * 0.22));
-                ctx.beginPath();
-                pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-                ctx.strokeStyle = path.bright ? 'rgba(137, 255, 190, 0.82)' : 'rgba(67, 218, 143, 0.52)';
-                ctx.lineWidth = path.bright ? 1.5 : 1;
-                ctx.shadowColor = '#35ed91';
-                ctx.shadowBlur = path.bright ? 9 : 5;
-                ctx.stroke();
-                const tip = pts[pts.length - 1];
-                ctx.beginPath();
-                ctx.arc(tip.x, tip.y, path.bright ? 2.4 : 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = '#c0ffda';
-                ctx.fill();
-            }
-
-            // Runic status marks ride the circuitry and grow brighter near the viewer.
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            for (const mark of tunnelRunes) {
-                const depth = (mark.depth + tunnelPhase) % 1;
-                const p = facePoint(mark.face, mark.u, depth);
-                const size = 8 + depth * (mark.bright ? 20 : 12);
-                ctx.font = `${size}px "Noto Sans Runic", serif`;
-                ctx.fillStyle = mark.bright ? 'rgba(200, 255, 222, .92)' : `rgba(93, 231, 158, ${0.38 + depth * 0.45})`;
-                ctx.shadowColor = '#54f5a2';
-                ctx.shadowBlur = mark.bright ? 10 : 5;
-                ctx.fillText(mark.rune, p.x, p.y);
+            for (const point of projected) {
+                const { node, x, y, scale } = point;
+                const radius = (node.sparkle ? 2.3 : 1.2) + scale * (node.sparkle ? 1.6 : 0.8);
+                const color = node.plum ? '#c6819a' : '#ace7cc';
+                ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = node.plum ? '#efb6ca' : (node.sparkle ? '#e3fff0' : '#ace7cc');
+                ctx.shadowColor = color;
+                ctx.shadowBlur = node.sparkle ? 15 : 7;
+                ctx.fill();
+                if (node.rune) {
+                    ctx.font = `${Math.min(17, 8 + scale * 7)}px "Noto Sans Runic", serif`;
+                    ctx.fillStyle = node.plum ? 'rgba(239, 182, 202, .85)' : 'rgba(205, 255, 225, .82)';
+                    ctx.shadowBlur = 8;
+                    ctx.fillText(node.rune, x + radius * 1.4, y - radius * 1.2);
+                }
             }
-            ctx.restore();
             ctx.shadowBlur = 0;
         }
 
