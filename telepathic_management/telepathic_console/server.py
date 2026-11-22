@@ -170,7 +170,13 @@ async def send_telepathic_input(request: Request) -> dict[str, str]:
     try:
         async with websockets.connect(target, open_timeout=3) as rosbridge:
             await rosbridge.send(json.dumps({"op": "advertise", "topic": envelope["topic"], "type": "cryptic_signal_core/msg/TelepathicSignal"}))
+            # A brand-new publisher needs a moment for ROS discovery to match
+            # the receptor's subscriber; publishing immediately on the same
+            # socket loses the first message after startup.
+            await asyncio.sleep(0.3)
             await rosbridge.send(json.dumps(envelope))
+            # Give rosbridge time to flush the publish before the socket closes.
+            await asyncio.sleep(0.15)
     except (websockets.WebSocketException, OSError, TimeoutError) as error:
         raise HTTPException(status_code=502, detail="Could not publish to ROS rosbridge") from error
     return {"identifier": identifier, "topic": envelope["topic"]}
