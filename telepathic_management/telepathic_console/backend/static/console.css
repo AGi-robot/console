@@ -86,7 +86,7 @@
 .probe-head { stroke: #c08d88; stroke-width: .22; }
 .probe-body { stroke: #899f91; stroke-width: .23; }
 .probe-signal { stroke-width: .035; opacity: 1; }
-.probe-signal-red { fill: #e87891; stroke: #ffe0e8; filter: drop-shadow(0 0 1.1px #e87891) drop-shadow(0 0 2.4px #c6819a); }
+.probe-signal-red { fill: #f28da2; stroke: #fff0f3; filter: drop-shadow(0 0 1.4px #f28da2) drop-shadow(0 0 3px #d87591); }
 .probe-signal-mint { fill: #c7ffe0; stroke: #f1fff7; filter: drop-shadow(0 0 1.1px #c7ffe0) drop-shadow(0 0 2.4px #ace7cc); }
 .robot-container:not(.aiva-online) .probe-signal { visibility: hidden; }
 .companion-console #robotVrmCanvas { cursor: default; touch-action: auto; }
