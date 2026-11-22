@@ -171,7 +171,6 @@
             const shouldAnimate = Boolean(canvas && matrixPanel &&
                 document.documentElement.dataset.theme === 'dark' &&
                 !document.hidden &&
-                !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
                 matrixPanel.getClientRects().length);
             if (shouldAnimate && networkTimer === null) {
                 networkTimer = setInterval(drawNetworkMesh, 90);

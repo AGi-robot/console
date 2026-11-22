@@ -2,12 +2,14 @@
 (() => {
   'use strict';
   const label = document.getElementById('aivaPresence');
+  const wave = document.getElementById('presenceWave');
   let stopped = false;
   let aivaOnline = false;
   let auroraOnline = false;
 
   function updateLabel() {
     if (!label) return;
+    wave?.classList.toggle('is-active', aivaOnline);
     if (aivaOnline && auroraOnline) label.textContent = 'AIVA + AuRoRA online';
     else if (aivaOnline) label.textContent = 'AIVA online';
     else if (auroraOnline) label.textContent = 'AuRoRA online';

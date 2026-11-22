@@ -2037,7 +2037,7 @@ body {
     opacity: .8;
     animation: none;
 }
-#matrixCanvas { opacity: .07; }
+#matrixCanvas { opacity: .22; }
 html[data-theme="light"] #matrixCanvas { display: none; }
 html[data-theme="light"] .circuit-node,
 html[data-theme="light"] .data-line,
