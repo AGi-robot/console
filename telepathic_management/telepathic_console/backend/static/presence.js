@@ -11,6 +11,21 @@
   let agenticWorkActive = false;
   let inferenceTps = 0;
   let companionName = window.AGIIdentity?.name || 'Grace';
+  let lastRgbState = '';
+  let lastRgbReportAt = 0;
+
+  function reportRgbState(state) {
+    const now = Date.now();
+    if (state === lastRgbState && now - lastRgbReportAt < 4000) return;
+    lastRgbState = state;
+    lastRgbReportAt = now;
+    fetch('/api/presence/grace', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state }),
+      keepalive: true,
+    }).catch(() => {});
+  }
 
   function updateLabel() {
     if (!label) return;
@@ -19,11 +34,13 @@
       const period = Math.max(0.22, Math.min(1, 1 - inferenceTps * 0.012));
       wave.style.setProperty('--presence-wave-duration', `${period}s`);
     }
-    if (!aivaOnline) label.textContent = `${companionName} is resting`;
-    else if (agenticWorkActive) label.textContent = `${companionName} is working`;
-    else if (inferenceActive && inferenceResponding) label.textContent = `${companionName} is responding`;
-    else if (inferenceActive) label.textContent = `${companionName} is thinking`;
-    else label.textContent = `${companionName} is waiting`;
+    let state = 'waiting';
+    if (!aivaOnline) state = 'resting';
+    else if (agenticWorkActive) state = 'working';
+    else if (inferenceActive && inferenceResponding) state = 'responding';
+    else if (inferenceActive) state = 'thinking';
+    label.textContent = `${companionName} is ${state}`;
+    reportRgbState(state);
   }
 
   window.addEventListener('agi-identity-ready', (event) => {

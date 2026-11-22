@@ -1,9 +1,15 @@
 """Exercise the actual console encoder and rosbridge message contract."""
 import json
+import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from cryptic_signal_core.telepathic_encoding import decode_text
 from telepathic_management.telepathic_console import server
+
+
+@pytest.fixture(autouse=True)
+def disable_openrgb_in_tests(monkeypatch):
+    monkeypatch.setenv('AGI_OPENRGB_ENABLED', 'false')
 
 
 def test_console_encodes_structured_unicode_before_ros_publish():
@@ -38,6 +44,17 @@ def test_presence_has_no_entity_import_dependency(monkeypatch):
     assert client.get('/api/presence').json()['aurora_online'] is False
     monkeypatch.setenv('AGI_WEB_TELEOPS_CONSOLE_AIVA_LOCAL', 'true')
     assert client.get('/api/presence').json()['aiva_online'] is True
+
+
+def test_grace_activity_sets_validated_rgb_state(monkeypatch):
+    monkeypatch.setattr(server, '_grace_activity', 'resting')
+    monkeypatch.setattr(server, '_grace_activity_seen', None)
+    applied = []
+    monkeypatch.setattr(server._rgb, 'set_state', applied.append)
+    client = TestClient(server.app)
+    assert client.post('/api/presence/grace', json={'state': 'responding'}).status_code == 204
+    assert applied == ['responding']
+    assert client.post('/api/presence/grace', json={'state': 'sleeping'}).status_code == 422
     monkeypatch.setenv('AGI_WEB_TELEOPS_CONSOLE_AIVA_LOCAL', 'false')
     assert client.post('/api/presence/aiva').status_code == 204
     assert client.get('/api/presence').json()['aiva_online'] is True

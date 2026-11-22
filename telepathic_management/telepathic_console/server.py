@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from cryptic_signal_core.telepathic_encoding import decode_text, encode_text
 from telepathy_receptor.identity import load_identity
+from telepathic_management.telepathic_console.openrgb import OpenRgb
 
 
 def _interface_dir() -> Path:
@@ -41,6 +42,39 @@ FRONTEND_DIR = INTERFACE_DIR / "frontend"
 app = FastAPI(title="AGi Web Teleops Console", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=INTERFACE_DIR / "backend" / "static"), name="static")
 _aiva_last_seen: float | None = None
+_grace_activity_seen: float | None = None
+_grace_activity = "resting"
+_rgb = OpenRgb()
+
+
+@app.on_event("startup")
+async def start_openrgb() -> None:
+    await asyncio.to_thread(_rgb.start)
+    app.state.rgb_watchdog = asyncio.create_task(_watch_grace_activity())
+
+
+@app.on_event("shutdown")
+async def stop_openrgb() -> None:
+    task = getattr(app.state, "rgb_watchdog", None)
+    if task:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    await asyncio.to_thread(_rgb.stop)
+
+
+async def _watch_grace_activity() -> None:
+    """Return the lights to steady dark plum when the UI stops reporting activity."""
+    global _grace_activity
+    try:
+        while True:
+            await asyncio.sleep(3)
+            if _grace_activity != "resting" and (
+                _grace_activity_seen is None or time.monotonic() - _grace_activity_seen > 12
+            ):
+                _grace_activity = "resting"
+                await asyncio.to_thread(_rgb.set_state, _grace_activity)
+    except asyncio.CancelledError:
+        raise
 
 
 def _companion_name() -> str:
@@ -75,6 +109,23 @@ async def aiva_presence() -> None:
     """Refresh AIVA's heartbeat; tailnet ACLs restrict callers to trusted devices."""
     global _aiva_last_seen
     _aiva_last_seen = time.monotonic()
+
+
+@app.post("/api/presence/grace", status_code=204)
+async def grace_activity(request: Request) -> None:
+    """Apply a validated Grace activity state to the local OpenRGB controller."""
+    global _grace_activity, _grace_activity_seen
+    try:
+        payload = await request.json()
+    except (json.JSONDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Expected a JSON activity state") from None
+    state = payload.get("state") if isinstance(payload, dict) else None
+    if state not in {"thinking", "responding", "working", "waiting", "resting"}:
+        raise HTTPException(status_code=422, detail="Unknown Grace activity state")
+    _grace_activity_seen = time.monotonic()
+    if state != _grace_activity:
+        _grace_activity = state
+        await asyncio.to_thread(_rgb.set_state, state)
 
 
 @app.get("/api/presence")
