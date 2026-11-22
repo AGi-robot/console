@@ -14,8 +14,40 @@
 
         let networkNodes = [];
         let networkEdges = [];
-        let networkZoom = 1;
         let signalPhase = 0;
+
+        function connectNodeToNearbyEdges(nodeIndex) {
+            const node = networkNodes[nodeIndex];
+            const nearest = networkNodes
+                .map((other, j) => ({
+                    j,
+                    distance: Math.hypot(node.x - other.x, node.y - other.y, (node.z - other.z) * 0.65),
+                }))
+                .filter((candidate) => candidate.j !== nodeIndex)
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, 5);
+
+            for (const candidate of nearest) {
+                const a = Math.min(nodeIndex, candidate.j);
+                const b = Math.max(nodeIndex, candidate.j);
+                if (networkEdges.some((edge) => edge.a === a && edge.b === b)) continue;
+                networkEdges.push({ a, b, plum: networkNodes[a].plum || networkNodes[b].plum });
+            }
+        }
+
+        function fillNetworkSignalSlots() {
+            for (const [plum, targetCount] of [[true, 5], [false, 7]]) {
+                const active = networkEdges.filter((edge) => edge.plum === plum && edge.phaseOffset !== undefined).length;
+                const available = networkEdges.filter((edge) => edge.plum === plum && edge.phaseOffset === undefined);
+                let missing = targetCount - active;
+                while (missing > 0 && available.length) {
+                    const index = Math.floor(Math.random() * available.length);
+                    const [edge] = available.splice(index, 1);
+                    edge.phaseOffset = Math.random();
+                    missing--;
+                }
+            }
+        }
 
         function initNetworkNodes() {
             const count = Math.max(100, Math.min(180, Math.floor((canvas?.width || 800) / 5)));
@@ -25,41 +57,19 @@
                 z: 0.24 + Math.random() * 2.15,
                 vx: (Math.random() * 2 - 1) * 0.0014,
                 vy: (Math.random() * 2 - 1) * 0.0014,
-                vz: (Math.random() * 2 - 1) * 0.0022,
+                vz: 0.0024 + Math.random() * 0.0008,
                 plum: Math.random() > 0.83,
                 sparkle: Math.random() > 0.8,
             }));
 
             // Build a dense local graph once. Keeping these node pairs fixed
             // prevents moving signals from jumping when nearby links change.
-            const edgeKeys = new Set();
             networkEdges = [];
-            networkNodes.forEach((node, i) => {
-                const nearest = networkNodes
-                    .map((other, j) => ({
-                        j,
-                        distance: Math.hypot(node.x - other.x, node.y - other.y, (node.z - other.z) * 0.65),
-                    }))
-                    .filter((candidate) => candidate.j !== i)
-                    .sort((a, b) => a.distance - b.distance)
-                    .slice(0, 5);
-                for (const candidate of nearest) {
-                    const a = Math.min(i, candidate.j);
-                    const b = Math.max(i, candidate.j);
-                    const key = `${a}:${b}`;
-                    if (edgeKeys.has(key)) continue;
-                    edgeKeys.add(key);
-                    networkEdges.push({ a, b, plum: networkNodes[a].plum || networkNodes[b].plum });
-                }
-            });
-
+            networkNodes.forEach((_, index) => connectNodeToNearbyEdges(index));
             const plumEdges = networkEdges.filter((edge) => edge.plum);
             const greenEdges = networkEdges.filter((edge) => !edge.plum);
-            const signalEdges = [
-                ...plumEdges.filter((_, index) => index % Math.max(1, Math.ceil(plumEdges.length / 5)) === 0).slice(0, 5),
-                ...greenEdges.filter((_, index) => index % Math.max(1, Math.ceil(greenEdges.length / 7)) === 0).slice(0, 7),
-            ];
-            signalEdges.forEach((edge, index) => { edge.phaseOffset = (index * 0.173) % 1; });
+            plumEdges.slice(0, 5).forEach((edge) => { edge.phaseOffset = Math.random(); });
+            greenEdges.slice(0, 7).forEach((edge) => { edge.phaseOffset = Math.random(); });
         }
 
         resizeCanvas();
@@ -69,7 +79,6 @@
             const { width, height } = canvas;
             const cx = width * 0.5;
             const cy = height * 0.5;
-            networkZoom = Math.min(1.9, networkZoom + 0.001);
             signalPhase = (signalPhase + 0.045) % 1;
 
             ctx.fillStyle = 'rgba(8, 16, 15, 0.46)';
@@ -81,15 +90,23 @@
             ctx.fillStyle = glow;
             ctx.fillRect(0, 0, width, height);
 
-            const projected = networkNodes.map((node) => {
+            const projected = networkNodes.map((node, nodeIndex) => {
                 node.x += node.vx;
                 node.y += node.vy;
-                // Keep the mesh in place; use a gradual global zoom instead of tunnel depth resets.
-                node.z += node.vz;
+                // Move toward the camera continuously; recycle each node at
+                // the far end so the neural field can continue indefinitely.
+                node.z -= node.vz;
                 if (node.x < -1.55 || node.x > 1.55) node.vx *= -1;
                 if (node.y < -1.35 || node.y > 1.35) node.vy *= -1;
-                if (node.z < 0.24 || node.z > 2.4) node.vz *= -1;
-                const scale = (0.9 * networkZoom) / (node.z + 0.45);
+                if (node.z < 0.28) {
+                    node.z = 2.4;
+                    node.x = (Math.random() * 2 - 1) * 1.5;
+                    node.y = (Math.random() * 2 - 1) * 1.3;
+                    networkEdges = networkEdges.filter((edge) => edge.a !== nodeIndex && edge.b !== nodeIndex);
+                    connectNodeToNearbyEdges(nodeIndex);
+                    fillNetworkSignalSlots();
+                }
+                const scale = 0.9 / (node.z + 0.45);
                 return {
                     node,
                     x: cx + node.x * width * 0.55 * scale,
