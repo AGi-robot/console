@@ -114,6 +114,20 @@
     }));
   }
   function paint(a, progress = 1) {
+    const filled=['curve','path','polygon','rectangle','ellipse'].includes(a.kind) && (a.fill || a.kind==='polygon');
+    if(filled && progress<1) {
+      // Outline then colour within the same 600 ms replay budget. A shape with
+      // no outline starts filling immediately, so it never waits invisibly.
+      const outlineEnd=a.stroke===false?0:0.6;
+      const fillProgress=Math.max(0,(progress-outlineEnd)/(1-outlineEnd));
+      if(fillProgress>0) {
+        const [x,y,w,h]=bounds(a);
+        ctx.save();ctx.beginPath();ctx.rect(x,y,w,h*fillProgress);ctx.clip();
+        paint({...a,stroke:false},1);ctx.restore();
+      }
+      if(a.stroke!==false)paint({...a,kind:a.kind==='polygon'?'path':a.kind,fill:false},Math.min(1,progress/outlineEnd));
+      return;
+    }
     ctx.save();
     if (a.kind === 'image') {
       const entry=imageEntry(a);

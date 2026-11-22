@@ -68,7 +68,7 @@ The page sends a request and the current drawing objects/selection to AIVA's
 `canvas_draw` tool. This requires an endpoint/model supporting `tools` and
 `tool_choice`. AIVA validates the resulting actions and publishes them on
 `/telepathic/response`, tagged with the request identifier. The requesting page
-replays strokes, shapes, and text visibly; **Stop Grace** interrupts replay and
+replays strokes, shape outlines, progressive colour fills, and text visibly; **Stop Grace** interrupts replay and
 ignores later results for that request. Completed actions can be undone.
 
 Text in response events is Cypher-encoded by the receptor and decoded by the
@@ -80,10 +80,15 @@ downscaled JPEG screenshot of the canvas and sends it with each request, and aga
 Grace asks for a fresh look between passes (`canvas_snapshot_request` answered on
 `/aiva/canvas_snapshot`), so a vision-capable endpoint can observe what it actually drew
 and correct placement before refining. Endpoints that reject image content fall back to
-text-only planning automatically. Planning occurs before the animated replay. Browser pages
-have independent artwork; the memory service records the requested action plan,
-while the actual editable document is saved locally. PNG export saves an image.
-Rebuild/source AIVA's packages after updating so the node and packaged pages match.
+text-only planning automatically. Validated actions stream to the browser for replay
+while planning continues. Outline and fill share a 600 ms per-shape budget; fill-only
+shapes reveal colour immediately. Visual review waits for completed replay before taking
+its screenshot. The backend allows up to 600 seconds per drawing request
+(`AIVA_DRAW_MAX_SECONDS`), stopping sooner when finished; this leaves time for
+screenshot-guided refinement on local Swift. Browser pages have independent artwork; the
+memory service records the requested action plan, while the actual editable document is
+saved locally. PNG export saves an image. Rebuild/source AIVA's packages after updating
+so the node and packaged pages match.
 
 ### Raster painting (MOSS-Image)
 

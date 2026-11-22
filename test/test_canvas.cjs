@@ -8,10 +8,12 @@ const source = fs.readFileSync(path.join(__dirname,'../telepathic_management/tel
 const PNG='data:image/png;base64,iVBORw0KGgo=';
 const tick=()=>new Promise(setImmediate);
 
-function studio() {
-  const storage=new Map(), elements=new Map(), sockets=[], images=[], draws=[];
+function studio({motion=false} = {}) {
+  const storage=new Map(), elements=new Map(), sockets=[], images=[], draws=[], clips=[];
+  let frameTime=0;
   const context=new Proxy({measureText:text=>({width:String(text).length*8}),
     drawImage:image=>draws.push(image.src||'canvas'),
+    rect:(...args)=>clips.push(args),
     createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}})},
     {get:(object,key)=>key in object?object[key]:()=>{}});
   class Element {
@@ -43,14 +45,14 @@ function studio() {
   }
   let nextId=0;
   const sandbox={document,Image,location:{protocol:'http:',host:'127.0.0.1'},
-    window:{CANVAS_STUDIO_CONFIG:{features:{reference:true,image:true,feedback:true}},matchMedia:()=>({matches:true}),addEventListener(){}},
+    window:{CANVAS_STUDIO_CONFIG:{features:{reference:true,image:true,feedback:true}},matchMedia:()=>({matches:!motion}),addEventListener(){}},
     WebSocket:Socket,sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
-    crypto:{randomUUID:()=>`id-${++nextId}`},performance,Event,Blob,URL,
-    setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:setImmediate};
+    crypto:{randomUUID:()=>`id-${++nextId}`},performance:{now:()=>frameTime},Event,Blob,URL,
+    setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:callback=>setImmediate(()=>{frameTime+=100;callback();})};
   vm.runInNewContext(source,sandbox,{filename:'drawing.js'});
   return {
-    element,images,draws,
+    element,images,draws,clips,
     artwork:()=>JSON.parse(storage.get('grace-canvas-v1')||'[]'),
     socket:()=>sockets.at(-1),
     respond:event=>sockets.at(-1).deliver(event),
@@ -113,4 +115,23 @@ test('reference image stays separate from artwork and reviewed studies send feed
   assert.equal(app.artwork()[0].kind,'ellipse');
   app.respond({type:'canvas_feedback',identifier:request.identifier,content:'Saved'});
   assert.equal(app.element('reviewStatus').textContent,'Saved');
+});
+
+
+test('filled shapes reveal colour during replay and finish before the review snapshot',async()=>{
+  for(const stroke of [true,false]) {
+    const app=studio({motion:true}),request=await app.ask(),identifier=request.identifier;
+    app.respond({type:'canvas_actions',identifier,actions:[{kind:'rectangle',id:'paint',
+      x:100,y:100,width:200,height:200,fill:true,stroke,fill_color:'#cc2222'}]});
+    app.respond({type:'canvas_snapshot_request',identifier});
+    await tick();
+    assert.equal(app.socket().sent.filter(item=>item.type==='snapshot').length,0);
+    for(let i=0;i<10;i++)await tick();
+    assert.equal(app.artwork()[0].id,'paint');
+    const heights=app.clips.map(rect=>rect[3]);
+    assert.ok(heights.length>=2);
+    assert.ok(heights.every(height=>height>0&&height<200));
+    assert.ok(heights.at(-1)>heights[0]);
+    assert.equal(app.socket().sent.filter(item=>item.type==='snapshot').length,1);
+  }
 });
