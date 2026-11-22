@@ -257,7 +257,7 @@
       console.error('Could not load Grace.vrm:', error);
       container.classList.remove('aiva-online', 'grace-only');
       const presence = document.getElementById('aivaPresence');
-      if (presence) presence.textContent = 'AIVA avatar unavailable';
+      if (presence) presence.textContent = `${window.AGIIdentity?.name || 'Grace'} avatar unavailable`;
     }
   }
 

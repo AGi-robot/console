@@ -58,3 +58,13 @@ def test_shared_envelope_uses_configured_channel_and_source(monkeypatch):
     msg = server._encode_stimulus('hello', 'request-1')
     assert (msg['source'], msg['channel'], msg['identifier']) == ('console-test', 'aiva', 'request-1')
     assert decode_text(bytes(msg['signal']), msg['pulse']) == 'hello'
+
+
+def test_shared_identity_drives_console_api_and_canvas_config():
+    client = TestClient(server.app)
+    identity = client.get('/api/identity').json()
+    assert identity['name'] == 'Grace'
+    assert identity['tagline'] == 'Talk, reflect, and be understood.'
+    config = client.get('/api/canvas/config.js')
+    assert config.status_code == 200
+    assert b'"assistantName":"Grace"' in config.content

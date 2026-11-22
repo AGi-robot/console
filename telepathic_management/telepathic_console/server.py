@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from cryptic_signal_core.telepathic_encoding import decode_text, encode_text
+from telepathy_receptor.identity import load_identity
 
 
 def _interface_dir() -> Path:
@@ -42,19 +43,31 @@ app.mount("/static", StaticFiles(directory=INTERFACE_DIR / "backend" / "static")
 _aiva_last_seen: float | None = None
 
 
+def _companion_name() -> str:
+    """Read the configured companion name for server-generated messages."""
+    return load_identity()["name"]
+
+
 @app.get("/api/settings")
 async def get_settings() -> dict:
+    identity = load_identity()
     return {"settings": [], "runtime": [
                 {"name": "ROS bridge", "value": os.getenv("AGI_ROSBRIDGE_URL", "ws://127.0.0.1:9090"), "source": "Environment"},
                 {"name": "Signal scheme", "value": os.getenv("AGI_TELEPATHIC_SCHEME", "ternary_utf8_v1"), "source": "Environment"},
             ], "path": "",
-            "apply_note": "Grace runtime configuration belongs to Shell.",
-            "read_only_note": "This console does not edit AuRoRA or Grace runtime settings."}
+            "apply_note": f"{identity['name']} runtime configuration belongs to Shell.",
+            "read_only_note": f"This console does not edit AuRoRA or {identity['name']} runtime settings."}
+
+
+@app.get("/api/identity")
+async def get_identity() -> dict:
+    """Expose the companion's shared public identity to every Console page."""
+    return load_identity()
 
 
 @app.put("/api/settings")
 async def put_settings(request: Request) -> dict:
-    raise HTTPException(status_code=409, detail="Configure Grace through Shell, not the console")
+    raise HTTPException(status_code=409, detail=f"Configure {_companion_name()} through Shell, not the console")
 
 
 @app.post("/api/presence/aiva", status_code=204)
@@ -136,7 +149,7 @@ def _decode_rosbridge_response(raw_message: str) -> str:
     except (TypeError, ValueError, json.JSONDecodeError):
         event_id = (event.get("identifier") or event.get("radio_id") or "") \
             if isinstance(event, dict) else ""
-        decoded = {"type": "error", "content": "Grace response signal could not be decoded."}
+        decoded = {"type": "error", "content": f"{_companion_name()} response signal could not be decoded."}
         if isinstance(event, dict) and "identifier" in event:
             decoded["identifier"] = event_id
         else:
@@ -194,8 +207,9 @@ async def canvas_page():
 
 @app.get("/api/canvas/config.js")
 async def canvas_config_script() -> Response:
+    identity = load_identity()
     settings = {
-        "assistantName": os.getenv("AGI_CANVAS_ASSISTANT_NAME", "Grace"),
+        "assistantName": identity["name"],
         "backUrl": "/",
         "apiKeyRequired": bool(os.getenv("AGI_CANVAS_API_KEY")),
         "features": {
@@ -300,7 +314,7 @@ async def canvas_api(browser: WebSocket) -> None:
                         event = _decode_response_event(event)
                     except (json.JSONDecodeError, AttributeError, TypeError, ValueError):
                         await browser.send_json({"type": "canvas_error", "identifier": identifier,
-                                                 "content": "Grace response signal could not be decoded."})
+                                                 "content": f"{_companion_name()} response signal could not be decoded."})
                         return
                     if not isinstance(event, dict) or event.get("identifier") != identifier:
                         continue

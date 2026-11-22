@@ -1,4 +1,5 @@
 /* Browser-local, illustrative playback. No prompt is submitted to Grace. */
+const companionName = () => window.AGIIdentity?.name || 'Grace';
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -200,7 +201,7 @@
     scenario=button.dataset.scenario;reset();
     document.querySelectorAll('[data-scenario]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
     $('scenarioLabel').textContent=scenario==='chat'?'CONVERSATION':'CANVAS · TOOL DRAWING';
-    $('prompt').value=scenario==='chat'?'Grace, what do you remember about our last conversation?':'Grace, draw a little moonlit garden with glowing flowers.';
+    $('prompt').value=scenario==='chat'?`${companionName()}, what do you remember about our last conversation?`:`${companionName()}, draw a little moonlit garden with glowing flowers.`;
     $('scenarioNote').textContent=scenario==='chat'?'A simulated chat turn: recent memory, model inference, and a reply.':'A simulated vector drawing with visual review. Requires vision in a real session; MOSS is optional.';
   }));
   // Do not skip through the story while the browser tab is hidden.

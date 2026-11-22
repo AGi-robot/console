@@ -1138,7 +1138,7 @@
 
             const label = document.createElement('div');
             label.className = 'message-label';
-            label.textContent = sender === 'user' ? 'You' : 'Grace';
+            label.textContent = sender === 'user' ? 'You' : (window.AGIIdentity?.name || 'Grace');
 
             const content = document.createElement('div');
             content.className = 'message-content';

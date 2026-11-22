@@ -10,6 +10,7 @@
   let inferenceResponding = false;
   let agenticWorkActive = false;
   let inferenceTps = 0;
+  let companionName = window.AGIIdentity?.name || 'Grace';
 
   function updateLabel() {
     if (!label) return;
@@ -18,12 +19,17 @@
       const period = Math.max(0.22, Math.min(1, 1 - inferenceTps * 0.012));
       wave.style.setProperty('--presence-wave-duration', `${period}s`);
     }
-    if (!aivaOnline) label.textContent = 'Grace is resting';
-    else if (agenticWorkActive) label.textContent = 'Grace is working';
-    else if (inferenceActive && inferenceResponding) label.textContent = 'Grace is responding';
-    else if (inferenceActive) label.textContent = 'Grace is thinking';
-    else label.textContent = 'Grace is waiting';
+    if (!aivaOnline) label.textContent = `${companionName} is resting`;
+    else if (agenticWorkActive) label.textContent = `${companionName} is working`;
+    else if (inferenceActive && inferenceResponding) label.textContent = `${companionName} is responding`;
+    else if (inferenceActive) label.textContent = `${companionName} is thinking`;
+    else label.textContent = `${companionName} is waiting`;
   }
+
+  window.addEventListener('agi-identity-ready', (event) => {
+    companionName = event.detail?.name || 'Grace';
+    updateLabel();
+  });
 
   window.addEventListener('agi-grace-inference', (event) => {
     inferenceActive = event.detail?.active === true;
