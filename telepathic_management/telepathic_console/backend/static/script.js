@@ -1122,9 +1122,15 @@
             try {
                 const history = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || '[]');
                 if (!Array.isArray(history)) return;
-                const validHistory = history.filter((message) => {
-                    if (!message || typeof message.text !== 'string') return true;
-                    return !BAD_SAVED_CHAT_PATTERNS.some((pattern) => pattern.test(message.text));
+                const validHistory = [];
+                history.forEach((message) => {
+                    const isBadReply = message && typeof message.text === 'string'
+                        && BAD_SAVED_CHAT_PATTERNS.some((pattern) => pattern.test(message.text));
+                    if (isBadReply) {
+                        if (validHistory[validHistory.length - 1]?.sender === 'user') validHistory.pop();
+                        return;
+                    }
+                    validHistory.push(message);
                 });
                 // Persist the cleanup immediately so these exchanges stay removed
                 // from this browser's saved chat after the next reload as well.
