@@ -169,9 +169,17 @@ class OpenRgb:
                 # set_state already applied mint; avoid repeated static writes.
                 continue
             cycle = FULL_CYCLE_SECONDS[state]
-            phase = (time.monotonic() - self._state_started) / cycle
-            amount = (1.0 - math.cos(phase * 2 * math.pi)) / 2
-            self._apply_color(self._interpolated_color(state, amount))
+            phase = ((time.monotonic() - self._state_started) % cycle) / cycle
+            if state == "waiting":
+                # Waiting uses a smooth fade with a full range of in-between hues.
+                amount = (1.0 - math.cos(phase * 2 * math.pi)) / 2
+                color = self._interpolated_color(state, amount)
+            else:
+                # Active work uses only the two theme endpoints, switching at
+                # the midpoint of each fast cycle.
+                amount = 0.0 if phase < 0.5 else 1.0
+                color = self._interpolated_color(state, amount)
+            self._apply_color(color)
 
     def set_state(self, state: str) -> None:
         if not self._enabled():
