@@ -122,10 +122,13 @@ async def grace_activity(request: Request) -> None:
     state = payload.get("state") if isinstance(payload, dict) else None
     if state not in {"thinking", "responding", "working", "waiting", "resting"}:
         raise HTTPException(status_code=422, detail="Unknown Grace activity state")
+    tps = payload.get("tps", 0.0) if isinstance(payload, dict) else 0.0
+    if (not isinstance(tps, (int, float)) or isinstance(tps, bool)
+            or not 0 <= tps <= 1000):
+        raise HTTPException(status_code=422, detail="TPS must be a number between 0 and 1000")
     _grace_activity_seen = time.monotonic()
-    if state != _grace_activity:
-        _grace_activity = state
-        await asyncio.to_thread(_rgb.set_state, state)
+    _grace_activity = state
+    await asyncio.to_thread(_rgb.set_state, state, float(tps))
 
 
 @app.get("/api/presence")

@@ -20,6 +20,9 @@ COLORS = {
     "waiting": "355E2F",
     "resting": "142015",
 }
+MIN_BRIGHTNESS = 0.12
+MAX_BRIGHTNESS = 1.0
+TPS_FOR_MAX_BRIGHTNESS = 40.0
 
 
 class OpenRgb:
@@ -32,6 +35,8 @@ class OpenRgb:
         self.client = None
         self.device = None
         self.state: str | None = None
+        self.tps = 0.0
+        self.brightness = MIN_BRIGHTNESS
         self._lock = threading.Lock()
 
     @staticmethod
@@ -112,20 +117,37 @@ class OpenRgb:
         self.client = None
         self.device = None
 
-    def set_state(self, state: str) -> None:
+    @staticmethod
+    def brightness_for_tps(tps: float, state: str) -> float:
+        """Scale the activity color from a dim idle glow to full brightness."""
+        if state == "resting":
+            return 0.06
+        rate = max(0.0, min(float(tps), TPS_FOR_MAX_BRIGHTNESS))
+        return MIN_BRIGHTNESS + (MAX_BRIGHTNESS - MIN_BRIGHTNESS) * rate / TPS_FOR_MAX_BRIGHTNESS
+
+    def set_state(self, state: str, tps: float = 0.0) -> None:
         if not self._enabled():
             return
         color = COLORS.get(state)
-        if color is None or state == self.state:
+        if color is None:
+            return
+        rate = max(0.0, min(float(tps), TPS_FOR_MAX_BRIGHTNESS))
+        brightness = self.brightness_for_tps(rate, state)
+        if state == self.state and abs(brightness - self.brightness) < 0.01:
             return
         with self._lock:
             try:
                 if self.client is None or self.device is None:
                     if not self._server_available() or not self._connect():
                         return
-                red, green, blue = (int(color[index:index + 2], 16) for index in (0, 2, 4))
+                red, green, blue = (
+                    round(int(color[index:index + 2], 16) * brightness)
+                    for index in (0, 2, 4)
+                )
                 self.device.set_color(self._color_class(red, green, blue))
                 self.state = state
+                self.tps = rate
+                self.brightness = brightness
             except Exception as error:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)
                 self._disconnect()
