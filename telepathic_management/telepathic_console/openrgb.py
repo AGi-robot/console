@@ -20,9 +20,13 @@ COLORS = {
     "waiting": "355E2F",
     "resting": "142015",
 }
-MIN_BRIGHTNESS = 0.12
-MAX_BRIGHTNESS = 1.0
-TPS_FOR_MAX_BRIGHTNESS = 40.0
+BRIGHTNESS = {
+    "resting": 0.25,
+    "waiting": 0.50,
+    "thinking": 0.75,
+    "responding": 0.75,
+    "working": 0.75,
+}
 
 
 class OpenRgb:
@@ -35,8 +39,7 @@ class OpenRgb:
         self.client = None
         self.device = None
         self.state: str | None = None
-        self.tps = 0.0
-        self.brightness = MIN_BRIGHTNESS
+        self.brightness = BRIGHTNESS["resting"]
         self._lock = threading.Lock()
 
     @staticmethod
@@ -118,21 +121,17 @@ class OpenRgb:
         self.device = None
 
     @staticmethod
-    def brightness_for_tps(tps: float, state: str) -> float:
-        """Scale the activity color from a dim idle glow to full brightness."""
-        if state == "resting":
-            return 0.06
-        rate = max(0.0, min(float(tps), TPS_FOR_MAX_BRIGHTNESS))
-        return MIN_BRIGHTNESS + (MAX_BRIGHTNESS - MIN_BRIGHTNESS) * rate / TPS_FOR_MAX_BRIGHTNESS
+    def brightness_for_state(state: str) -> float:
+        """Set a steady brightness for each Grace activity state."""
+        return BRIGHTNESS[state]
 
-    def set_state(self, state: str, tps: float = 0.0) -> None:
+    def set_state(self, state: str) -> None:
         if not self._enabled():
             return
         color = COLORS.get(state)
         if color is None:
             return
-        rate = max(0.0, min(float(tps), TPS_FOR_MAX_BRIGHTNESS))
-        brightness = self.brightness_for_tps(rate, state)
+        brightness = self.brightness_for_state(state)
         if state == self.state and abs(brightness - self.brightness) < 0.01:
             return
         with self._lock:
@@ -146,7 +145,6 @@ class OpenRgb:
                 )
                 self.device.set_color(self._color_class(red, green, blue))
                 self.state = state
-                self.tps = rate
                 self.brightness = brightness
             except Exception as error:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)

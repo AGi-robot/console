@@ -12,19 +12,17 @@
   let inferenceTps = 0;
   let companionName = window.AGIIdentity?.name || 'Grace';
   let lastRgbState = '';
-  let lastRgbTps = -1;
   let lastRgbReportAt = 0;
 
-  function reportRgbState(state, tps) {
+  function reportRgbState(state) {
     const now = Date.now();
-    if (state === lastRgbState && Math.abs(tps - lastRgbTps) < 0.5 && now - lastRgbReportAt < 1000) return;
+    if (state === lastRgbState && now - lastRgbReportAt < 4000) return;
     lastRgbState = state;
-    lastRgbTps = tps;
     lastRgbReportAt = now;
     fetch('/api/presence/grace', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state, tps }),
+      body: JSON.stringify({ state }),
       keepalive: true,
     }).catch(() => {});
   }
@@ -42,7 +40,7 @@
     else if (inferenceActive && inferenceResponding) state = 'responding';
     else if (inferenceActive) state = 'thinking';
     label.textContent = `${companionName} is ${state}`;
-    reportRgbState(state, inferenceTps);
+    reportRgbState(state);
   }
 
   window.addEventListener('agi-identity-ready', (event) => {

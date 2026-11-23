@@ -50,12 +50,11 @@ def test_grace_activity_sets_validated_rgb_state(monkeypatch):
     monkeypatch.setattr(server, '_grace_activity', 'resting')
     monkeypatch.setattr(server, '_grace_activity_seen', None)
     applied = []
-    monkeypatch.setattr(server._rgb, 'set_state', lambda state, tps=0.0: applied.append((state, tps)))
+    monkeypatch.setattr(server._rgb, 'set_state', applied.append)
     client = TestClient(server.app)
-    assert client.post('/api/presence/grace', json={'state': 'responding', 'tps': 20}).status_code == 204
-    assert applied == [('responding', 20.0)]
+    assert client.post('/api/presence/grace', json={'state': 'responding'}).status_code == 204
+    assert applied == ['responding']
     assert client.post('/api/presence/grace', json={'state': 'sleeping'}).status_code == 422
-    assert client.post('/api/presence/grace', json={'state': 'responding', 'tps': -1}).status_code == 422
     monkeypatch.setenv('AGI_WEB_TELEOPS_CONSOLE_AIVA_LOCAL', 'false')
     assert client.post('/api/presence/aiva').status_code == 204
     assert client.get('/api/presence').json()['aiva_online'] is True
