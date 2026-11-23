@@ -15,8 +15,9 @@ SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
 MINT = (88, 199, 126)  # greener mint, #58C77E
-RESTING_MINT = MINT  # Offline and online mint use the same color.
-PLUM = (196, 127, 120)  # Rose light sampled from Grace's chamber background
+RESTING_MINT = MINT  # Mint is reserved for offline resting.
+PLUM = (184, 70, 105)  # Deeper, more saturated chamber rose
+DARK_ROSE = (104, 45, 63)  # Deep rose for the online baseline
 BRIGHTNESS = {
     "resting": 0.50,
     "waiting": 0.50,
@@ -24,10 +25,12 @@ BRIGHTNESS = {
     "responding": 0.75,
     "working": 0.75,
 }
-FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
+FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.4, "responding": 0.4, "working": 0.4}
 UPDATE_INTERVAL_SECONDS = 0.033
-PULSE_ATTACK_FRACTION = 0.10
-PULSE_RELEASE_FRACTION = 0.25
+PULSE_ATTACK_FRACTION = 0.15
+PULSE_RELEASE_FRACTION = 0.35
+BASE_ROSE_BRIGHTNESS = 0.50
+WAITING_ROSE_BRIGHTNESS = 0.58
 
 
 class OpenRgb:
@@ -138,24 +141,41 @@ class OpenRgb:
 
     @staticmethod
     def color_for_state(state: str) -> tuple[int, int, int]:
-        """Return the mint endpoint, including the state's target brightness."""
-        target_peak = round(255 * BRIGHTNESS[state])
-        source = RESTING_MINT if state == "resting" else MINT
+        """Return resting mint or the dark rose online baseline."""
+        if state == "resting":
+            source = RESTING_MINT
+            target_peak = round(255 * BRIGHTNESS[state])
+        else:
+            source = DARK_ROSE
+            target_peak = round(255 * BASE_ROSE_BRIGHTNESS)
         source_peak = max(source)
         return tuple(round(channel * target_peak / source_peak) for channel in source)
 
     @staticmethod
-    def _interpolated_color(state: str, amount: float) -> tuple[int, int, int]:
-        """Blend mint to plum and back while keeping the state's brightness level."""
+    def _active_pulse_color(amount: float, state: str) -> tuple[int, int, int]:
+        """Pulse active states from dark rose to a vivid chamber-rose light."""
         mixed = tuple(round(start + (end - start) * amount)
-                      for start, end in zip(MINT, PLUM))
-        target_peak = round(255 * BRIGHTNESS[state])
+                      for start, end in zip(DARK_ROSE, PLUM))
+        base_peak = round(255 * BASE_ROSE_BRIGHTNESS)
+        active_peak = round(255 * BRIGHTNESS[state])
+        target_peak = round(base_peak + (active_peak - base_peak) * amount)
+        source_peak = max(mixed)
+        return tuple(round(channel * target_peak / source_peak) for channel in mixed)
+
+    @staticmethod
+    def _waiting_pulse_color(amount: float) -> tuple[int, int, int]:
+        """Give online waiting a soft rose beat over its dark-rose baseline."""
+        mixed = tuple(round(start + (end - start) * amount)
+                      for start, end in zip(DARK_ROSE, PLUM))
+        base_peak = round(255 * BASE_ROSE_BRIGHTNESS)
+        rose_peak = round(255 * WAITING_ROSE_BRIGHTNESS)
+        target_peak = round(base_peak + (rose_peak - base_peak) * amount)
         source_peak = max(mixed)
         return tuple(round(channel * target_peak / source_peak) for channel in mixed)
 
     @staticmethod
     def _pulse_amount(phase_seconds: float, cycle_seconds: float) -> float:
-        """Return a smooth plum beat followed by a mint resting interval."""
+        """Return a smooth rose beat followed by the state's resting interval."""
         attack = cycle_seconds * PULSE_ATTACK_FRACTION
         release = cycle_seconds * PULSE_RELEASE_FRACTION
 
@@ -196,10 +216,11 @@ class OpenRgb:
                 continue
             cycle = FULL_CYCLE_SECONDS[state]
             phase_seconds = (time.monotonic() - self._state_started) % cycle
-            # Every online state uses the same smooth mint-to-plum heartbeat;
-            # active work raises the tempo from 60 to 120 beats per minute.
+            # Every online state stays in the rose palette. Waiting pulses at
+            # 60 BPM; active states pulse faster and brighter at 150 BPM.
             amount = self._pulse_amount(phase_seconds, cycle)
-            color = self._interpolated_color(state, amount)
+            color = (self._waiting_pulse_color(amount) if state == "waiting"
+                     else self._active_pulse_color(amount, state))
             self._apply_color(color)
 
     def set_state(self, state: str) -> None:
@@ -211,8 +232,7 @@ class OpenRgb:
             self.state = state
             self._state_started = time.monotonic()
             self.brightness = self.brightness_for_state(state)
-            # Start every activity transition from mint; the animation then moves
-            # toward plum and back at the pace assigned to the new state.
+            # Offline rests in mint; every online transition starts in dark rose.
             self._apply_color(self.color_for_state(state))
 
     def stop(self) -> None:
