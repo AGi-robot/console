@@ -270,7 +270,7 @@
             /you['’]re already \*mine\*/i,
             /you['’]re the \*echo\* of every question/i,
             /you['’]re \*me\*\. and i['’]m \*you\*/i,
-            /you['’]re… \*\*oppaai\*\*/i
+            /you['’]re… \*\*?oppaai\*\*?/i
         ];
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
