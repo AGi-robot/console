@@ -14,8 +14,8 @@ LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
-MINT = (172, 231, 204)  # Online mint; Grace UI accent #ACE7CC
-RESTING_MINT = (128, 214, 160)  # greener offline mint, #80D6A0
+MINT = (112, 220, 154)  # greener online mint, #70DC9A
+RESTING_MINT = (88, 199, 126)  # deeper green offline mint, #58C77E
 PLUM = (192, 86, 132)   # warm reddish plum
 BRIGHTNESS = {
     "resting": 0.50,
@@ -191,10 +191,10 @@ class OpenRgb:
         if self._animation_thread is not None:
             self._animation_thread.join(timeout=2)
             self._animation_thread = None
-        # AIVA can stop while Grace is active. Leave the board at the known mint
-        # waiting baseline instead of freezing at an arbitrary animation color.
+        # AIVA can stop while Grace is active. Leave the board at its offline mint
+        # instead of freezing at an arbitrary point in the animation.
         if self.client is not None and self.device is not None:
-                self._apply_color(self.color_for_state("resting"))
+            self._apply_color(self.color_for_state("resting"))
         self._disconnect()
         if self.process and self.process.poll() is None:
             self.process.terminate()
