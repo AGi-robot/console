@@ -125,11 +125,19 @@ class OpenRgb:
         """Set a steady brightness for each Grace activity state."""
         return BRIGHTNESS[state]
 
+    @staticmethod
+    def color_for_state(state: str) -> tuple[int, int, int]:
+        """Scale each state's hue to its target output level, independent of its source color."""
+        color = COLORS[state]
+        channels = tuple(int(color[index:index + 2], 16) for index in (0, 2, 4))
+        source_peak = max(channels)
+        target_peak = round(255 * BRIGHTNESS[state])
+        return tuple(round(channel * target_peak / source_peak) for channel in channels)
+
     def set_state(self, state: str) -> None:
         if not self._enabled():
             return
-        color = COLORS.get(state)
-        if color is None:
+        if state not in COLORS:
             return
         brightness = self.brightness_for_state(state)
         if state == self.state and abs(brightness - self.brightness) < 0.01:
@@ -139,10 +147,7 @@ class OpenRgb:
                 if self.client is None or self.device is None:
                     if not self._server_available() or not self._connect():
                         return
-                red, green, blue = (
-                    round(int(color[index:index + 2], 16) * brightness)
-                    for index in (0, 2, 4)
-                )
+                red, green, blue = self.color_for_state(state)
                 self.device.set_color(self._color_class(red, green, blue))
                 self.state = state
                 self.brightness = brightness

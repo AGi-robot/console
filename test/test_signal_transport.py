@@ -67,6 +67,9 @@ def test_rgb_brightness_tracks_grace_activity_state():
     assert OpenRgb.brightness_for_state('thinking') == 0.75
     assert OpenRgb.brightness_for_state('responding') == 0.75
     assert OpenRgb.brightness_for_state('working') == 0.75
+    assert max(OpenRgb.color_for_state('resting')) == 64
+    assert max(OpenRgb.color_for_state('waiting')) == 128
+    assert max(OpenRgb.color_for_state('thinking')) == 191
 
 
 def test_bridge_failure_is_reported_and_bad_scheme_rejected(monkeypatch):
