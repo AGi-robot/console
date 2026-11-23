@@ -14,9 +14,9 @@ LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
-MINT = (112, 220, 154)  # greener online mint, #70DC9A
+MINT = (162, 202, 177)  # chamber mint light, #A2CAB1
 RESTING_MINT = (88, 199, 126)  # deeper green offline mint, #58C77E
-PLUM = (192, 86, 132)   # warm reddish plum
+PLUM = (196, 127, 120)  # Rose light sampled from Grace's chamber background
 BRIGHTNESS = {
     "resting": 0.50,
     "waiting": 0.50,
@@ -24,9 +24,10 @@ BRIGHTNESS = {
     "responding": 0.75,
     "working": 0.75,
 }
-FULL_CYCLE_SECONDS = {"waiting": 4.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
-UPDATE_INTERVAL_SECONDS = 0.1
-WAITING_UPDATE_INTERVAL_SECONDS = 0.05
+FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
+UPDATE_INTERVAL_SECONDS = 0.033
+PULSE_ATTACK_FRACTION = 0.10
+PULSE_RELEASE_FRACTION = 0.25
 
 
 class OpenRgb:
@@ -44,6 +45,7 @@ class OpenRgb:
         self._state_started = time.monotonic()
         self._animation_stop = threading.Event()
         self._animation_thread: threading.Thread | None = None
+        self._last_color: tuple[int, int, int] | None = None
 
     @staticmethod
     def _enabled() -> bool:
@@ -127,6 +129,7 @@ class OpenRgb:
                 pass
         self.client = None
         self.device = None
+        self._last_color = None
 
     @staticmethod
     def brightness_for_state(state: str) -> float:
@@ -150,13 +153,32 @@ class OpenRgb:
         source_peak = max(mixed)
         return tuple(round(channel * target_peak / source_peak) for channel in mixed)
 
+    @staticmethod
+    def _pulse_amount(phase_seconds: float, cycle_seconds: float) -> float:
+        """Return a smooth plum beat followed by a mint resting interval."""
+        attack = cycle_seconds * PULSE_ATTACK_FRACTION
+        release = cycle_seconds * PULSE_RELEASE_FRACTION
+
+        def smoothstep(value: float) -> float:
+            value = min(1.0, max(0.0, value))
+            return value * value * (3.0 - 2.0 * value)
+
+        if phase_seconds < attack:
+            return smoothstep(phase_seconds / attack)
+        if phase_seconds < attack + release:
+            return 1.0 - smoothstep((phase_seconds - attack) / release)
+        return 0.0
+
     def _apply_color(self, color: tuple[int, int, int]) -> None:
         with self._lock:
             try:
                 if self.client is None or self.device is None:
                     if not self._server_available() or not self._connect():
                         return
+                if color == self._last_color:
+                    return
                 self.device.set_color(self._color_class(*color))
+                self._last_color = color
             except Exception as error:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)
                 self._disconnect()
@@ -164,9 +186,7 @@ class OpenRgb:
     def _animate(self) -> None:
         while not self._animation_stop.is_set():
             state = self.state
-            interval = (WAITING_UPDATE_INTERVAL_SECONDS if state == "waiting"
-                        else UPDATE_INTERVAL_SECONDS)
-            if self._animation_stop.wait(interval):
+            if self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
                 break
             state = self.state
             if state is None:
@@ -175,16 +195,11 @@ class OpenRgb:
                 # set_state already applied mint; avoid repeated static writes.
                 continue
             cycle = FULL_CYCLE_SECONDS[state]
-            phase = ((time.monotonic() - self._state_started) % cycle) / cycle
-            if state == "waiting":
-                # Waiting uses a smooth fade with a full range of in-between hues.
-                amount = (1.0 - math.cos(phase * 2 * math.pi)) / 2
-                color = self._interpolated_color(state, amount)
-            else:
-                # Active work uses only the two theme endpoints, switching at
-                # the midpoint of each fast cycle.
-                amount = 0.0 if phase < 0.5 else 1.0
-                color = self._interpolated_color(state, amount)
+            phase_seconds = (time.monotonic() - self._state_started) % cycle
+            # Every online state uses the same smooth mint-to-plum heartbeat;
+            # active work raises the tempo from 60 to 120 beats per minute.
+            amount = self._pulse_amount(phase_seconds, cycle)
+            color = self._interpolated_color(state, amount)
             self._apply_color(color)
 
     def set_state(self, state: str) -> None:
