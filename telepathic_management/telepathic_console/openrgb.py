@@ -14,8 +14,8 @@ LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
-MINT = (162, 202, 177)  # chamber mint light, #A2CAB1
-RESTING_MINT = (88, 199, 126)  # deeper green offline mint, #58C77E
+MINT = (88, 199, 126)  # greener mint, #58C77E
+RESTING_MINT = MINT  # Offline and online mint use the same color.
 PLUM = (196, 127, 120)  # Rose light sampled from Grace's chamber background
 BRIGHTNESS = {
     "resting": 0.50,
