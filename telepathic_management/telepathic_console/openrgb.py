@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 import socket
 import subprocess
@@ -13,20 +14,17 @@ LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
-COLORS = {
-    "thinking": "72D65A",
-    "responding": "72D65A",
-    "working": "72D65A",
-    "waiting": "355E2F",
-    "resting": "142015",
-}
+MINT = (172, 231, 204)  # Grace UI accent #ACE7CC
+PLUM = (192, 86, 132)   # warm reddish plum
 BRIGHTNESS = {
-    "resting": 0.25,
+    "resting": 0.50,
     "waiting": 0.50,
     "thinking": 0.75,
     "responding": 0.75,
     "working": 0.75,
 }
+FULL_CYCLE_SECONDS = {"waiting": 24.0, "thinking": 8.0, "responding": 8.0, "working": 8.0}
+UPDATE_INTERVAL_SECONDS = 0.4
 
 
 class OpenRgb:
@@ -41,6 +39,9 @@ class OpenRgb:
         self.state: str | None = None
         self.brightness = BRIGHTNESS["resting"]
         self._lock = threading.Lock()
+        self._state_started = time.monotonic()
+        self._animation_stop = threading.Event()
+        self._animation_thread: threading.Thread | None = None
 
     @staticmethod
     def _enabled() -> bool:
@@ -88,6 +89,11 @@ class OpenRgb:
         if not self._connect():
             return
         self.set_state("resting")
+        self._animation_stop.clear()
+        self._animation_thread = threading.Thread(
+            target=self._animate, name="grace-openrgb-animation", daemon=True
+        )
+        self._animation_thread.start()
 
     def _connect(self) -> bool:
         try:
@@ -122,40 +128,71 @@ class OpenRgb:
 
     @staticmethod
     def brightness_for_state(state: str) -> float:
-        """Set a steady brightness for each Grace activity state."""
+        """Keep the established baseline brightness for each Grace activity state."""
         return BRIGHTNESS[state]
 
     @staticmethod
     def color_for_state(state: str) -> tuple[int, int, int]:
-        """Scale each state's hue to its target output level, independent of its source color."""
-        color = COLORS[state]
-        channels = tuple(int(color[index:index + 2], 16) for index in (0, 2, 4))
-        source_peak = max(channels)
+        """Return the mint endpoint, including the state's target brightness."""
         target_peak = round(255 * BRIGHTNESS[state])
-        return tuple(round(channel * target_peak / source_peak) for channel in channels)
+        source_peak = max(MINT)
+        return tuple(round(channel * target_peak / source_peak) for channel in MINT)
 
-    def set_state(self, state: str) -> None:
-        if not self._enabled():
-            return
-        if state not in COLORS:
-            return
-        brightness = self.brightness_for_state(state)
-        if state == self.state and abs(brightness - self.brightness) < 0.01:
-            return
+    @staticmethod
+    def _interpolated_color(state: str, amount: float) -> tuple[int, int, int]:
+        """Blend mint to plum and back while keeping the state's brightness level."""
+        mixed = tuple(round(start + (end - start) * amount)
+                      for start, end in zip(MINT, PLUM))
+        target_peak = round(255 * BRIGHTNESS[state])
+        source_peak = max(mixed)
+        return tuple(round(channel * target_peak / source_peak) for channel in mixed)
+
+    def _apply_color(self, color: tuple[int, int, int]) -> None:
         with self._lock:
             try:
                 if self.client is None or self.device is None:
                     if not self._server_available() or not self._connect():
                         return
-                red, green, blue = self.color_for_state(state)
-                self.device.set_color(self._color_class(red, green, blue))
-                self.state = state
-                self.brightness = brightness
+                self.device.set_color(self._color_class(*color))
             except Exception as error:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)
                 self._disconnect()
 
+    def _animate(self) -> None:
+        while not self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
+            state = self.state
+            if state is None:
+                continue
+            if state == "resting":
+                # set_state already applied mint; avoid repeated static writes.
+                continue
+            cycle = FULL_CYCLE_SECONDS[state]
+            phase = (time.monotonic() - self._state_started) / cycle
+            amount = (1.0 - math.cos(phase * 2 * math.pi)) / 2
+            self._apply_color(self._interpolated_color(state, amount))
+
+    def set_state(self, state: str) -> None:
+        if not self._enabled():
+            return
+        if state not in BRIGHTNESS:
+            return
+        if state != self.state:
+            self.state = state
+            self._state_started = time.monotonic()
+            self.brightness = self.brightness_for_state(state)
+            # Start every activity transition from mint; the animation then moves
+            # toward plum and back at the pace assigned to the new state.
+            self._apply_color(self.color_for_state(state))
+
     def stop(self) -> None:
+        self._animation_stop.set()
+        if self._animation_thread is not None:
+            self._animation_thread.join(timeout=2)
+            self._animation_thread = None
+        # AIVA can stop while Grace is active. Leave the board at the known mint
+        # waiting baseline instead of freezing at an arbitrary animation color.
+        if self.client is not None and self.device is not None:
+            self._apply_color(self.color_for_state("waiting"))
         self._disconnect()
         if self.process and self.process.poll() is None:
             self.process.terminate()

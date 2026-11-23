@@ -30,11 +30,13 @@ Python library.
 The Console reports Grace's thinking, responding, working, waiting, and resting
 states to a loopback OpenRGB SDK server. The Python `openrgb-python` client keeps
 one connection open and controls the `MSI Z790 GAMING PLUS WIFI` motherboard.
-Thinking, responding, and working use `#72D65A`; waiting uses `#355E2F`; resting
-uses steady near-black green `#142015`. The controller starts the OpenRGB AppImage
-from `~/openrgb/` by default; `AGI_OPENRGB_APPIMAGE` can point to another binary,
-and `AGI_OPENRGB_ENABLED=false` disables lighting control. If the Console stops
-reporting activity, the controller switches to resting after 12 seconds.
+Online waiting slowly cycles between the UI mint (`#ACE7CC`) and warm plum
+(`#C05684`); thinking, responding, and working cycle three times faster. When
+Grace is resting or AIVA quits, the controller leaves the lights at the mint
+waiting baseline. If the Console stops reporting activity, it switches to
+resting after 12 seconds. The controller starts the OpenRGB AppImage from
+`~/openrgb/` by default; `AGI_OPENRGB_APPIMAGE` can point to another binary, and
+`AGI_OPENRGB_ENABLED=false` disables lighting control.
 
 ## System logs
 
