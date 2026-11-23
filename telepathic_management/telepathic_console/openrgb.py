@@ -24,8 +24,9 @@ BRIGHTNESS = {
     "responding": 0.75,
     "working": 0.75,
 }
-FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
+FULL_CYCLE_SECONDS = {"waiting": 4.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
 UPDATE_INTERVAL_SECONDS = 0.1
+WAITING_UPDATE_INTERVAL_SECONDS = 0.05
 
 
 class OpenRgb:
@@ -161,7 +162,12 @@ class OpenRgb:
                 self._disconnect()
 
     def _animate(self) -> None:
-        while not self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
+        while not self._animation_stop.is_set():
+            state = self.state
+            interval = (WAITING_UPDATE_INTERVAL_SECONDS if state == "waiting"
+                        else UPDATE_INTERVAL_SECONDS)
+            if self._animation_stop.wait(interval):
+                break
             state = self.state
             if state is None:
                 continue
