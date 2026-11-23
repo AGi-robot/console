@@ -33,7 +33,7 @@ one connection open and controls the `MSI Z790 GAMING PLUS WIFI` motherboard.
 Online waiting stays in the deeper rose palette, making a soft beat from dark
 rose (`#80374E`) to brighter rose (`#AD4263`) once per second. Thinking,
 responding, and working pulse from dark rose to saturated rose (`#BF496D`) every
-0.4 seconds.
+0.4 seconds, with a short 0.12-second glow and a 0.28-second dark interval.
 When Grace is resting or AIVA quits, the controller leaves the same green mint
 (`#58C77E`) at the resting brightness. If the Console stops
 reporting activity, it switches to resting after 12 seconds. The controller

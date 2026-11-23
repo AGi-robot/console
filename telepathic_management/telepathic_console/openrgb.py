@@ -29,6 +29,8 @@ FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.4, "responding": 0.4, "worki
 UPDATE_INTERVAL_SECONDS = 0.033
 PULSE_ATTACK_FRACTION = 0.15
 PULSE_RELEASE_FRACTION = 0.35
+ACTIVE_PULSE_ATTACK_FRACTION = 0.10
+ACTIVE_PULSE_RELEASE_FRACTION = 0.20
 BASE_ROSE_BRIGHTNESS = 0.50
 WAITING_ROSE_BRIGHTNESS = 0.68
 
@@ -174,10 +176,15 @@ class OpenRgb:
         return tuple(round(channel * target_peak / source_peak) for channel in mixed)
 
     @staticmethod
-    def _pulse_amount(phase_seconds: float, cycle_seconds: float) -> float:
+    def _pulse_amount(
+        phase_seconds: float,
+        cycle_seconds: float,
+        attack_fraction: float = PULSE_ATTACK_FRACTION,
+        release_fraction: float = PULSE_RELEASE_FRACTION,
+    ) -> float:
         """Return a smooth rose beat followed by the state's resting interval."""
-        attack = cycle_seconds * PULSE_ATTACK_FRACTION
-        release = cycle_seconds * PULSE_RELEASE_FRACTION
+        attack = cycle_seconds * attack_fraction
+        release = cycle_seconds * release_fraction
 
         def smoothstep(value: float) -> float:
             value = min(1.0, max(0.0, value))
@@ -218,9 +225,17 @@ class OpenRgb:
             phase_seconds = (time.monotonic() - self._state_started) % cycle
             # Every online state stays in the rose palette. Waiting pulses at
             # 60 BPM; active states pulse faster and brighter at 150 BPM.
-            amount = self._pulse_amount(phase_seconds, cycle)
-            color = (self._waiting_pulse_color(amount) if state == "waiting"
-                     else self._active_pulse_color(amount, state))
+            if state == "waiting":
+                amount = self._pulse_amount(phase_seconds, cycle)
+                color = self._waiting_pulse_color(amount)
+            else:
+                amount = self._pulse_amount(
+                    phase_seconds,
+                    cycle,
+                    ACTIVE_PULSE_ATTACK_FRACTION,
+                    ACTIVE_PULSE_RELEASE_FRACTION,
+                )
+                color = self._active_pulse_color(amount, state)
             self._apply_color(color)
 
     def set_state(self, state: str) -> None:
