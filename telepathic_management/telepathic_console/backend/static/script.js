@@ -1349,7 +1349,6 @@
                         console.log('✅ Image sent:', base64.length, 'chars');
                         setEmotion('thinking', '🤔');
                         removeImage();
-                        createFloatingHeart();
                     } catch (e) {
                         console.error('❌ Send failed:', e);
                     }
@@ -1382,19 +1381,7 @@
                 setTimeout(() => setEmotion('happy'), 500);
 
                 userInput.value = '';
-                createFloatingHeart();
             }
-        }
-
-        function createFloatingHeart() {
-            const heart = document.createElement('div');
-            heart.className = 'float-hearts';
-            heart.innerHTML = ['💖', '💕', '💗', '💝', '💘'][Math.floor(Math.random() * 5)];
-            heart.style.left = Math.random() * window.innerWidth + 'px';
-            heart.style.animationDuration = (3 + Math.random() * 2) + 's';
-            document.body.appendChild(heart);
-
-            setTimeout(() => heart.remove(), 5000);
         }
 
         // Event listeners

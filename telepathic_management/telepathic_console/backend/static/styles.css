@@ -1445,31 +1445,6 @@
             border-radius: 10px;
         }
 
-        .float-hearts {
-            position: fixed;
-            font-size: 24px;
-            animation: float-up 4s ease-in infinite;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        @keyframes float-up {
-            0% {
-                opacity: 0;
-                transform: translateY(100vh) rotate(0deg);
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px) rotate(360deg);
-            }
-        }
-
         .speaking-waves {
             position: absolute;
             top: -30px;
