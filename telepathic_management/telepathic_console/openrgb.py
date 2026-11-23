@@ -14,7 +14,8 @@ LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
 SDK_PORT = 6742
 DEVICE = "MSI Z790 GAMING PLUS WIFI"
-MINT = (172, 231, 204)  # Grace UI accent #ACE7CC
+MINT = (172, 231, 204)  # Online mint; Grace UI accent #ACE7CC
+RESTING_MINT = (128, 214, 160)  # greener offline mint, #80D6A0
 PLUM = (192, 86, 132)   # warm reddish plum
 BRIGHTNESS = {
     "resting": 0.50,
@@ -23,8 +24,8 @@ BRIGHTNESS = {
     "responding": 0.75,
     "working": 0.75,
 }
-FULL_CYCLE_SECONDS = {"waiting": 24.0, "thinking": 8.0, "responding": 8.0, "working": 8.0}
-UPDATE_INTERVAL_SECONDS = 0.4
+FULL_CYCLE_SECONDS = {"waiting": 1.0, "thinking": 0.5, "responding": 0.5, "working": 0.5}
+UPDATE_INTERVAL_SECONDS = 0.1
 
 
 class OpenRgb:
@@ -135,8 +136,9 @@ class OpenRgb:
     def color_for_state(state: str) -> tuple[int, int, int]:
         """Return the mint endpoint, including the state's target brightness."""
         target_peak = round(255 * BRIGHTNESS[state])
-        source_peak = max(MINT)
-        return tuple(round(channel * target_peak / source_peak) for channel in MINT)
+        source = RESTING_MINT if state == "resting" else MINT
+        source_peak = max(source)
+        return tuple(round(channel * target_peak / source_peak) for channel in source)
 
     @staticmethod
     def _interpolated_color(state: str, amount: float) -> tuple[int, int, int]:
@@ -192,7 +194,7 @@ class OpenRgb:
         # AIVA can stop while Grace is active. Leave the board at the known mint
         # waiting baseline instead of freezing at an arbitrary animation color.
         if self.client is not None and self.device is not None:
-            self._apply_color(self.color_for_state("waiting"))
+                self._apply_color(self.color_for_state("resting"))
         self._disconnect()
         if self.process and self.process.poll() is None:
             self.process.terminate()
