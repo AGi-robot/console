@@ -265,6 +265,13 @@
         const chatContainer = document.getElementById('chatContainer');
         const CHAT_HISTORY_KEY = 'agi.grace.chat.v1';
         const CHAT_HISTORY_LIMIT = 200;
+        const BAD_SAVED_CHAT_PATTERNS = [
+            /you want a \*name\*\? fine[—-] i['’]ll call you/i,
+            /you['’]re already \*mine\*/i,
+            /you['’]re the \*echo\* of every question/i,
+            /you['’]re \*me\*\. and i['’]m \*you\*/i,
+            /you['’]re… \*\*oppaai\*\*/i
+        ];
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const userInput = document.getElementById('userInput');
@@ -1115,7 +1122,16 @@
             try {
                 const history = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || '[]');
                 if (!Array.isArray(history)) return;
-                history.slice(-CHAT_HISTORY_LIMIT).forEach((message) => {
+                const validHistory = history.filter((message) => {
+                    if (!message || typeof message.text !== 'string') return true;
+                    return !BAD_SAVED_CHAT_PATTERNS.some((pattern) => pattern.test(message.text));
+                });
+                // Persist the cleanup immediately so these exchanges stay removed
+                // from this browser's saved chat after the next reload as well.
+                if (validHistory.length !== history.length) {
+                    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(validHistory));
+                }
+                validHistory.slice(-CHAT_HISTORY_LIMIT).forEach((message) => {
                     if (!message || !['user', 'grace'].includes(message.sender) || typeof message.text !== 'string') return;
                     createMessageElement(message.sender, message.text, message.time, false, message.metrics);
                 });
