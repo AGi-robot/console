@@ -62,14 +62,14 @@ def test_grace_activity_sets_validated_rgb_state(monkeypatch):
 
 def test_rgb_brightness_tracks_grace_activity_state():
     from telepathic_management.telepathic_console.openrgb import OpenRgb
-    assert OpenRgb.brightness_for_state('resting') == 0.25
+    assert OpenRgb.brightness_for_state('resting') == 0.50
     assert OpenRgb.brightness_for_state('waiting') == 0.50
     assert OpenRgb.brightness_for_state('thinking') == 0.75
     assert OpenRgb.brightness_for_state('responding') == 0.75
     assert OpenRgb.brightness_for_state('working') == 0.75
-    assert max(OpenRgb.color_for_state('resting')) == 64
+    assert max(OpenRgb.color_for_state('resting')) == 128
     assert max(OpenRgb.color_for_state('waiting')) == 128
-    assert max(OpenRgb.color_for_state('thinking')) == 191
+    assert max(OpenRgb.color_for_state('thinking')) == 128
 
 
 def test_bridge_failure_is_reported_and_bad_scheme_rejected(monkeypatch):
