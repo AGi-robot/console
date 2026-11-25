@@ -610,5 +610,18 @@
       replay.then(()=>{if(session===token&&requestId)stop(`Drawing interrupted: ${detail}`);});
     }
   }
+  // Evaluation pages opt in before loading this script. Use the same action
+  // and paint functions as the studio, in an isolated browser context.
+  if(window.CANVAS_EVAL_MODE === true) {
+    window.renderCanvasEvaluation = async actions => {
+      if(!Array.isArray(actions)) throw new Error('Expected an action list');
+      objects=[];undo=[];redo=[];selected=null;imageCache.clear();
+      for(const item of actions) action(normalize(item));
+      await waitForImages();render(null,1,false);
+      const output=document.createElement('canvas');output.width=WIDTH;output.height=HEIGHT;
+      const context=output.getContext('2d');context.fillStyle='white';context.fillRect(0,0,WIDTH,HEIGHT);
+      context.drawImage(canvas,0,0);return output.toDataURL('image/png');
+    };
+  }
   window.addEventListener('pagehide',()=>{token++;apiSocket?.close();},{once:true});
 })();
