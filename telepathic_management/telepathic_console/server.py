@@ -139,6 +139,9 @@ async def set_lighting(request: Request) -> dict:
     except (ValueError, TypeError, OSError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from None
     try:
+        if effect is None:
+            result = await asyncio.to_thread(_rgb.clear_effect)
+            return {**result, "selected": "default", "reason": payload.get("reason", "")}
         return await asyncio.to_thread(_rgb.set_effect, effect)
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from None

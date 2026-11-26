@@ -52,10 +52,18 @@ def resolve_effect(payload, catalog=None):
     if catalog is None:
         catalog = read_catalog()
     name = values.pop('preset', None)
+    if name == 'default' and name not in catalog['effects']:
+        catalog = {**catalog, 'effects': {**catalog['effects'], 'default': {}}}
     if name is not None:
         if name not in catalog['effects']:
             raise ValueError('Unknown lighting preset')
         values = {**catalog['effects'][name], **values}
+    if name == 'default':
+        if set(values) - {'reason', 'meaning'}:
+            raise ValueError('The default preset restores live activity lighting; overrides are not applicable')
+        # Validate explanation fields through the regular effect validator.
+        LightingEffect(**values)
+        return None
     for key in ('start_color', 'end_color'):
         if isinstance(values.get(key), str):
             values[key] = catalog['colors'].get(values[key], values[key])
@@ -66,17 +74,28 @@ def resolve_effect(payload, catalog=None):
 
 def read_catalog():
     with _LOCK:
-        return _parse(_document())
+        data = _parse(_document())
+        from .openrgb import OpenRgb
+        data['activity_defaults'] = OpenRgb.activity_defaults()
+        data['effects']['default'] = {}
+        return data
 
 
-def save_preset(name: str, effect: dict, colors: dict | None = None):
+def save_preset(name: str, effect: dict, colors: dict | None = None, reason: str = '', meaning: str = ''):
     with _LOCK:
+        if name == 'default':
+            raise ValueError('default is reserved for the live activity lighting')
         document = _document()
         data = _parse(document)
         if not isinstance(effect, dict) or 'preset' in effect:
             raise ValueError('Saved effects must be objects without nested preset references')
         if colors is not None and not isinstance(colors, dict):
             raise ValueError('colors must be an object')
+        LightingEffect(reason=reason, meaning=meaning)
+        if reason:
+            effect = {**effect, 'reason': reason}
+        if meaning:
+            effect = {**effect, 'meaning': meaning}
         data['colors'].update(colors or {})
         data['effects'][name] = effect
         block = '```json\n' + json.dumps(data, indent=2, ensure_ascii=False) + '\n```'
@@ -96,4 +115,4 @@ def save_preset(name: str, effect: dict, colors: dict | None = None):
         finally:
             if temporary and os.path.exists(temporary):
                 os.unlink(temporary)
-        return {'saved': name, 'effect': effect, 'colors': colors or {}}
+        return {'saved': name, 'effect': effect, 'colors': colors or {}, 'reason': reason, 'meaning': meaning}

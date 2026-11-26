@@ -2,7 +2,7 @@
 
 Console owns the existing OpenRGB SDK connection. Grace can compose an effect through `PUT /api/lighting`, inspect it through `GET /api/lighting`, and stop it through `DELETE /api/lighting`. One effect controls the configured device as a whole. Per-LED spatial effects are not implemented.
 
-Effects replace each other and survive ordinary activity updates. Expiry or explicit stop restores the latest activity state. Console shutdown restores resting lighting. No calendar, news, emotion or activity state automatically selects a custom effect. The caller chooses freely; this API does not add a scheduler or news source.
+Effects replace each other and survive ordinary activity updates. Optional expiry or explicit stop restores the latest activity state. Console shutdown restores resting lighting. No calendar, news, emotion or activity state automatically selects a custom effect. The caller chooses freely; this API does not add a scheduler or news source.
 
 | Field | Meaning and default |
 |---|---|
@@ -17,7 +17,7 @@ Effects replace each other and survive ordinary activity updates. Expiry or expl
 | `rhythm_seconds` | 1–60 seconds; default 2. Heartbeat has two pulses; random changes brightness once per cycle |
 | `rainbow` | Default false. Uses the hue wheel instead of palette interpolation |
 | `loop` | Default true. Palettes move forward and backward; rainbow wraps. False holds the final colour after one traversal |
-| `duration_seconds` | 0.1–3600 seconds; default 60. Always bounds the effect, including loops |
+| `duration_seconds` | Optional 0.1–3600 seconds. Omit or use null to continue until replaced, stopped or Console shuts down |
 | `morse_text` | Up to 120 ASCII letters, digits and spaces; required for Morse |
 | `morse_unit_seconds` | 0.25–2 seconds per dot; default 0.25 |
 
@@ -54,3 +54,13 @@ The seed catalogue is [`lighting_catalog.md`](telepathic_management/telepathic_c
 The file contains prose and exactly one fenced `json` block with `colors` and `effects`. Add colour names, palettes, brightness settings, transition speeds, Morse messages, and effects there. `PUT /api/lighting/catalog` accepts `name`, `effect`, and optional `colors`; it validates the result and atomically updates the file while preserving prose. `GET /api/lighting/catalog` reads it. Grace receives `lighting_catalog` and `save_lighting_preset` tools as well as the play/status/stop tools. Saving a preset does not start it. Use `{"preset":"effect_name"}` in a lighting request, optionally overriding fields.
 
 For entirely new rhythms without code changes, use `rhythm: "pattern"` and `rhythm_pattern: [0, 1, 0.2, 0.7, 0, 0]`. These are successive brightness multipliers over `rhythm_seconds`, with at least 0.25 seconds per step and at most 64 steps. Software still implements timing, interpolation, validation and hardware access; Markdown supplies the chosen data. The catalogue allows up to 128 colours, 128 effects and 64 KiB. Invalid manual edits return an error rather than silently choosing a different effect.
+
+## Default lighting, reasons and personal codes
+
+The built-in `default` catalogue option restores the exact existing activity renderer: resting mint `#58C77E`, online dark rose `#682D3F`, with rose `#B84669` pulses. Brightness normalization and pulse timings are exposed directly from the renderer as `activity_defaults` in the catalogue response, avoiding approximated copies. `default` is reserved and cannot be overwritten by catalogue saves. Select `{"preset":"default","reason":"I want our usual lighting again"}` or use the stop tool. Explicit effect overrides do not apply to this preset.
+
+Effects can carry `reason` and `meaning` strings (up to 1000 characters each). `reason` is a brief explanation for a decision. `meaning` describes a personal signal, such as “two pink pulses mean hello.” Both are retained in saved presets. Model-facing set/save/stop tools require a reason. Normal Interactive chat records the chosen arguments and result in regular Memory's conversation database immediately after each attempted action, including failed actions and actions followed by an incomplete reply. This records actions and their outcomes, not proof of a visible hardware change.
+
+Install the matching Memory event support as well as Toolbox and Interactive. Related/recent lighting events are recalled into subsequent chat context and available through `lighting_history`. Grace can explain past choices when asked, or mention them in her reply without being asked. The record is scoped to the active conversation and persists across restarts. Saving a catalogue definition alone does not add it to regular memory; Interactive records the model's save action. Standalone Agentic trials do not use Grace's conversation memory.
+
+A custom effect can continue until Grace replaces it or selects default: leave `duration_seconds` unspecified or null. She can alternatively choose a duration. Morse permits 120 characters per effect; longer text needs separate effects. Status reports `morse_message_seconds` so the caller can choose enough time for a full transmission. Blink codes and colour transitions can have any personal meaning she saves; no vocabulary of meanings is imposed. A scheduler is still needed for activity outside chat or other existing triggers.

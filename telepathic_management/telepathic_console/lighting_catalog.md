@@ -1,6 +1,9 @@
 # Grace's lighting catalogue
 
 Colours and effects are editable data. Examples are suggestions, with no fixed occasions or triggers.
+The `default` preset restores the existing resting-mint and online-rose activity renderer.
+Its exact live settings are also exposed as `activity_defaults` by the catalogue API.
+Saved effects may carry `reason` and `meaning` strings for explanations and personal codes.
 The single JSON block is read whenever a lighting request arrives. Brightness is 0–1.
 `rhythm_pattern` contains successive brightness multipliers, equally spaced over `rhythm_seconds`.
 
@@ -12,6 +15,7 @@ The single JSON block is read whenever a lighting request arrives. Brightness is
     "pumpkin": "#FF7518", "purple": "#800080", "sakura": "#FFB7C5"
   },
   "effects": {
+    "default": {},
     "rainbow": {"rainbow": true, "transition_speed": "slow", "brightness": 0.4, "duration_seconds": 120},
     "red_white_green": {"start_color": "red", "transition_colors": ["white"], "end_color": "green", "transition_speed": "slow"},
     "pumpkin_purple": {"start_color": "pumpkin", "end_color": "purple", "transition_speed": "slow"},

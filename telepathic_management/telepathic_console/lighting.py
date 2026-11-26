@@ -47,6 +47,8 @@ def morse_units(text: str) -> tuple[int, ...]:
 
 @dataclass(frozen=True)
 class LightingEffect:
+    reason: str = ''
+    meaning: str = ''
     start_color: str = '#58C77E'
     end_color: str | None = None
     transition_colors: list[str] = field(default_factory=list)
@@ -59,13 +61,16 @@ class LightingEffect:
     rhythm_pattern: list[float] = field(default_factory=list)
     rainbow: bool = False
     loop: bool = True
-    duration_seconds: float = 60.0
+    duration_seconds: float | None = None
     morse_text: str = ''
     morse_unit_seconds: float = 0.25
     _palette: tuple = field(init=False, repr=False)
     _morse: tuple = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        for key in ('reason', 'meaning'):
+            if not isinstance(getattr(self, key), str) or len(getattr(self, key)) > 1000:
+                raise ValueError(f'{key} must be a string of at most 1000 characters')
         if not isinstance(self.transition_colors, list) or len(self.transition_colors) > 16:
             raise ValueError('transition_colors must be a list of at most 16 hex colours')
         palette = [_colour(self.start_color)] + [_colour(c) for c in self.transition_colors]
@@ -78,7 +83,8 @@ class LightingEffect:
         if type(self.loop) is not bool or type(self.rainbow) is not bool:
             raise ValueError('loop and rainbow must be booleans')
         _number('brightness', self.brightness, 0, 1)
-        _number('duration_seconds', self.duration_seconds, 0.1, 3600)
+        if self.duration_seconds is not None:
+            _number('duration_seconds', self.duration_seconds, 0.1, 3600)
         _number('rhythm_seconds', self.rhythm_seconds, 1, 60)
         _number('morse_unit_seconds', self.morse_unit_seconds, 0.25, 2)
         if not isinstance(self.rhythm_pattern, list) or len(self.rhythm_pattern) > 64:

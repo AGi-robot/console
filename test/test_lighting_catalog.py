@@ -42,3 +42,42 @@ def test_invalid_manual_markdown_is_reported(tmp_path, monkeypatch):
     monkeypatch.setenv('AGI_LIGHTING_CATALOG', str(path))
     with pytest.raises(ValueError):
         read_catalog()
+
+
+def test_default_restores_exact_activity_renderer(tmp_path, monkeypatch):
+    from unittest.mock import patch
+    from telepathic_management.telepathic_console.openrgb import OpenRgb
+    monkeypatch.setenv('AGI_LIGHTING_CATALOG', str(tmp_path / 'lighting.md'))
+    catalog = read_catalog()
+    assert 'default' in catalog['effects']
+    assert catalog['activity_defaults'] == OpenRgb.activity_defaults()
+    assert resolve_effect({'preset': 'default', 'reason': 'Return to our usual colours'}) is None
+    with patch.object(server._rgb, 'clear_effect', return_value={'active': False}) as clear:
+        reply = TestClient(server.app).put('/api/lighting', json={'preset': 'default', 'reason': 'Return to normal'})
+        assert reply.json()['selected'] == 'default'
+        clear.assert_called_once()
+    with pytest.raises(ValueError):
+        save_preset('default', {})
+
+
+def test_personal_code_explanation_is_saved(tmp_path, monkeypatch):
+    monkeypatch.setenv('AGI_LIGHTING_CATALOG', str(tmp_path / 'lighting.md'))
+    save_preset('hello_oppa', {'start_color': '#FF88AA', 'rhythm': 'pattern',
+                'rhythm_pattern': [1, 0, 1, 0], 'rhythm_seconds': 4},
+                reason='I wanted a personal greeting', meaning='Two pink pulses mean hello')
+    effect = resolve_effect({'preset': 'hello_oppa'})
+    assert effect.meaning == 'Two pink pulses mean hello'
+    assert effect.reason == 'I wanted a personal greeting'
+
+
+def test_indefinite_effect_and_long_morse_timing():
+    from unittest.mock import patch
+    from telepathic_management.telepathic_console.lighting import LightingEffect
+    from telepathic_management.telepathic_console.openrgb import OpenRgb
+    rgb = OpenRgb()
+    rgb._animation_thread = type('Thread', (), {'is_alive': lambda self: True})()
+    with patch.object(rgb, '_apply_color'):
+        status = rgb.set_effect(LightingEffect(rhythm='morse', morse_text='HELLO THERE'))
+        assert status['active']
+        assert status['remaining_seconds'] is None
+        assert status['morse_message_seconds'] > 1

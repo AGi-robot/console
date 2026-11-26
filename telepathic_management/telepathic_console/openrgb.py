@@ -215,6 +215,17 @@ class OpenRgb:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)
                 self._disconnect()
 
+    @staticmethod
+    def activity_defaults() -> dict:
+        """Expose the exact existing activity renderer settings, not approximated effects."""
+        return {"resting_color": RESTING_MINT, "online_base_color": DARK_ROSE,
+                "online_pulse_color": PLUM, "brightness": dict(BRIGHTNESS),
+                "cycle_seconds": dict(FULL_CYCLE_SECONDS),
+                "base_brightness": BASE_ROSE_BRIGHTNESS,
+                "waiting_peak_brightness": WAITING_ROSE_BRIGHTNESS,
+                "waiting_attack_release": [PULSE_ATTACK_FRACTION, PULSE_RELEASE_FRACTION],
+                "active_attack_release": [ACTIVE_PULSE_ATTACK_FRACTION, ACTIVE_PULSE_RELEASE_FRACTION]}
+
     def set_effect(self, effect: LightingEffect) -> dict:
         with self._scene_lock:
             if not self._enabled() or self._animation_thread is None or not self._animation_thread.is_alive():
@@ -228,11 +239,13 @@ class OpenRgb:
     def effect_status(self) -> dict:
         with self._scene_lock:
             effect = self._effect
-            remaining = max(0, effect.duration_seconds - (time.monotonic() - self._effect_started)) if effect else 0
+            remaining = (max(0, effect.duration_seconds - (time.monotonic() - self._effect_started))
+                         if effect and effect.duration_seconds is not None else None)
             details = {k: v for k, v in asdict(effect).items() if not k.startswith('_')} if effect else None
-            return {"active": bool(effect and remaining > 0), "effect": details,
+            return {"active": bool(effect and (remaining is None or remaining > 0)), "effect": details,
                     "remaining_seconds": remaining, "connected": self.device is not None,
-                    "activity_state": self.state}
+                    "activity_state": self.state,
+                    "morse_message_seconds": len(effect._morse) * effect.morse_unit_seconds if effect and effect.rhythm == 'morse' else None}
 
     def clear_effect(self) -> dict:
         with self._scene_lock:
@@ -247,7 +260,7 @@ class OpenRgb:
                 now = time.monotonic()
                 if self._effect is not None:
                     elapsed = now - self._effect_started
-                    if elapsed < self._effect.duration_seconds:
+                    if self._effect.duration_seconds is None or elapsed < self._effect.duration_seconds:
                         self._apply_color(self._effect.color_at(elapsed))
                         continue
                     self.clear_effect()
