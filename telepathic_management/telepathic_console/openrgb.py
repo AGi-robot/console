@@ -8,6 +8,9 @@ import subprocess
 import threading
 import time
 from pathlib import Path
+from dataclasses import asdict
+
+from .lighting import LightingEffect
 
 LOGGER = logging.getLogger(__name__)
 SDK_HOST = "127.0.0.1"
@@ -46,6 +49,9 @@ class OpenRgb:
         self.state: str | None = None
         self.brightness = BRIGHTNESS["resting"]
         self._lock = threading.Lock()
+        self._scene_lock = threading.RLock()
+        self._effect: LightingEffect | None = None
+        self._effect_started = 0.0
         self._state_started = time.monotonic()
         self._animation_stop = threading.Event()
         self._animation_thread: threading.Thread | None = None
@@ -209,45 +215,67 @@ class OpenRgb:
                 LOGGER.warning("Could not update OpenRGB lighting: %s", error)
                 self._disconnect()
 
+    def set_effect(self, effect: LightingEffect) -> dict:
+        with self._scene_lock:
+            if not self._enabled() or self._animation_thread is None or not self._animation_thread.is_alive():
+                raise RuntimeError("OpenRGB lighting is disabled or unavailable")
+            self._effect = effect
+            self._effect_started = time.monotonic()
+            self._apply_color(effect.color_at(0))
+            LOGGER.info("Grace lighting effect: %s", effect)
+            return self.effect_status()
+
+    def effect_status(self) -> dict:
+        with self._scene_lock:
+            effect = self._effect
+            remaining = max(0, effect.duration_seconds - (time.monotonic() - self._effect_started)) if effect else 0
+            details = {k: v for k, v in asdict(effect).items() if not k.startswith('_')} if effect else None
+            return {"active": bool(effect and remaining > 0), "effect": details,
+                    "remaining_seconds": remaining, "connected": self.device is not None,
+                    "activity_state": self.state}
+
+    def clear_effect(self) -> dict:
+        with self._scene_lock:
+            self._effect = None
+            if self.state is not None:
+                self._apply_color(self.color_for_state(self.state))
+            return self.effect_status()
+
     def _animate(self) -> None:
-        while not self._animation_stop.is_set():
-            state = self.state
-            if self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
-                break
-            state = self.state
-            if state is None:
-                continue
-            if state == "resting":
-                # set_state already applied mint; avoid repeated static writes.
-                continue
-            cycle = FULL_CYCLE_SECONDS[state]
-            phase_seconds = (time.monotonic() - self._state_started) % cycle
-            # Every online state stays in the rose palette. Waiting pulses at
-            # 60 BPM; active states pulse faster and brighter at 150 BPM.
-            if state == "waiting":
-                amount = self._pulse_amount(phase_seconds, cycle)
-                color = self._waiting_pulse_color(amount)
-            else:
-                amount = self._pulse_amount(
-                    phase_seconds,
-                    cycle,
-                    ACTIVE_PULSE_ATTACK_FRACTION,
-                    ACTIVE_PULSE_RELEASE_FRACTION,
-                )
-                color = self._active_pulse_color(amount, state)
-            self._apply_color(color)
+        while not self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
+            with self._scene_lock:
+                now = time.monotonic()
+                if self._effect is not None:
+                    elapsed = now - self._effect_started
+                    if elapsed < self._effect.duration_seconds:
+                        self._apply_color(self._effect.color_at(elapsed))
+                        continue
+                    self.clear_effect()
+                state = self.state
+                if state is None or state == "resting":
+                    continue
+                cycle = FULL_CYCLE_SECONDS[state]
+                phase_seconds = (now - self._state_started) % cycle
+                if state == "waiting":
+                    amount = self._pulse_amount(phase_seconds, cycle)
+                    color = self._waiting_pulse_color(amount)
+                else:
+                    amount = self._pulse_amount(phase_seconds, cycle,
+                                               ACTIVE_PULSE_ATTACK_FRACTION,
+                                               ACTIVE_PULSE_RELEASE_FRACTION)
+                    color = self._active_pulse_color(amount, state)
+                self._apply_color(color)
 
     def set_state(self, state: str) -> None:
-        if not self._enabled():
+        if not self._enabled() or state not in BRIGHTNESS:
             return
-        if state not in BRIGHTNESS:
-            return
-        if state != self.state:
-            self.state = state
-            self._state_started = time.monotonic()
-            self.brightness = self.brightness_for_state(state)
-            # Offline rests in mint; every online transition starts in dark rose.
-            self._apply_color(self.color_for_state(state))
+        with self._scene_lock:
+            if state != self.state:
+                self.state = state
+                self._state_started = time.monotonic()
+                self.brightness = self.brightness_for_state(state)
+                if self._effect is None:
+                    self._apply_color(self.color_for_state(state))
 
     def stop(self) -> None:
         self._animation_stop.set()
@@ -258,6 +286,7 @@ class OpenRgb:
         # instead of freezing at an arbitrary point in the animation.
         if self.client is not None and self.device is not None:
             self._apply_color(self.color_for_state("resting"))
+        self._effect = None
         self._disconnect()
         if self.process and self.process.poll() is None:
             self.process.terminate()
