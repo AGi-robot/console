@@ -47,3 +47,7 @@ Clone beside Shell at `AIVA/console`, link `shell/src/telepathic_management` to
 `ros2 run telepathic_management telepathic_console`.
 
 The source history is retained through a merge of the former Telepathy repository.
+
+## Expressive OpenRGB lighting
+
+[Lighting controls and integration](LIGHTING.md) let Grace compose colours, gradients, brightness, rainbow, blink/heartbeat/random rhythms, and Morse through an API. Custom effects are independent of activity lighting and expire or stop explicitly.
