@@ -1,6 +1,6 @@
 # Grace's lighting catalogue
 
-Colours and effects are editable data. Examples are suggestions, with no fixed occasions or triggers. Grace may choose disco for a celebration, dance, or moment when it seems fitting; these examples are not keyword triggers.
+Colours and effects are editable data. The presets are examples, not a fixed list of occasions or keyword triggers. Disco is one option among them; Grace may choose any fitting effect from the current conversation, mood, history, or timing.
 The `default` preset restores the existing resting-mint and online-rose activity renderer.
 Its exact live settings are also exposed as `activity_defaults` by the catalogue API.
 Saved effects may carry `reason` and `meaning` strings for explanations and personal codes.
