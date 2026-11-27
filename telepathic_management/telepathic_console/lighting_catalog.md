@@ -1,6 +1,6 @@
 # Grace's lighting catalogue
 
-Colours and effects are editable data. The presets are examples, not a fixed list of occasions or keyword triggers. Disco is one option among them; Grace may choose any fitting effect from the current conversation, mood, history, or timing.
+Colours and effects are editable data. The presets are examples, not a fixed list of occasions or keyword triggers. Grace may choose any fitting effect from the current conversation, mood, history, or timing.
 The seed presets include seasonal, celebratory, atmospheric, focus, and signal effects; Grace can choose or customize any of them.
 The `default` preset restores the existing resting-mint and online-rose activity renderer.
 Its exact live settings are also exposed as `activity_defaults` by the catalogue API.
