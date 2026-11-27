@@ -69,3 +69,5 @@ A custom effect can continue until Grace replaces it or selects default: leave `
 ## Disco
 
 The `disco` preset loops through the rainbow with a two-second heartbeat brightness rhythm. It is one option in the lighting catalogue, not a special trigger or the only effect Grace can choose. It stays active until Grace replaces it, chooses `default`, or selects another duration. Celebration, dancing, and encouragement are examples that may fit disco; Grace can also choose any other fitting effect based on the conversation, mood, history, or timing. When asked to return the lights to normal, she chooses `default`, which restores the activity lighting. A new built-in preset is added to existing runtime catalogues without replacing your saved colors or effects.
+
+Other built-in looks include `pumpkin_green` for autumn, `cyberpunk` for magenta-violet-cyan gradients, `aurora` for a slow green-teal-violet traversal, `ocean` for deep blue-teal-cyan, `sunset` for warm orange-rose-purple, `focus` for dim cool-white light, and `cozy_amber` for a soft stationary glow. These are editable starting points, not rules about when to use them.
