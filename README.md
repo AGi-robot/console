@@ -48,6 +48,8 @@ Clone beside Shell at `AIVA/console`, link `shell/src/telepathic_management` to
 
 The source history is retained through a merge of the former Telepathy repository.
 
-## Expressive OpenRGB lighting
+## Automatic activity lighting
 
-[Lighting controls and integration](LIGHTING.md) let Grace compose colours, gradients, brightness, rainbow, blink/heartbeat/random rhythms, and Morse through an API. Custom effects are independent of activity lighting and expire or stop explicitly.
+Console uses OpenRGB only for automatic online/activity lighting. Grace's model has no lighting controls in this server. Expressive lighting, its editable catalogue, and model tools belong to [Toolbox](https://github.com/Project-AGi/toolbox/blob/dev/LIGHTING.md), used by Agentic and Interactive.
+
+On the same Linux host, both renderers use `AGI_OPENRGB_LOCK_PATH` (default `~/.agi/openrgb-device.lock`). Console yields while an expressive effect holds the device and resumes the latest automatic state after release, including when resting. Run both processes as the same user with the same lock path. Console does not import Toolbox.

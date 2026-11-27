@@ -1,6 +1,7 @@
 """Optional local OpenRGB bridge for Grace's activity lighting."""
 from __future__ import annotations
 
+import fcntl
 import logging
 import os
 import socket
@@ -8,14 +9,11 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from dataclasses import asdict
-
-from .lighting import LightingEffect
 
 LOGGER = logging.getLogger(__name__)
-SDK_HOST = "127.0.0.1"
-SDK_PORT = 6742
-DEVICE = "MSI Z790 GAMING PLUS WIFI"
+SDK_HOST = os.getenv("AGI_OPENRGB_HOST", "127.0.0.1")
+SDK_PORT = int(os.getenv("AGI_OPENRGB_PORT", "6742"))
+DEVICE = os.getenv("AGI_OPENRGB_DEVICE", "MSI Z790 GAMING PLUS WIFI")
 MINT = (88, 199, 126)  # greener mint, #58C77E
 RESTING_MINT = MINT  # Mint is reserved for offline resting.
 PLUM = (184, 70, 105)  # Deeper, more saturated chamber rose
@@ -50,8 +48,6 @@ class OpenRgb:
         self.brightness = BRIGHTNESS["resting"]
         self._lock = threading.Lock()
         self._scene_lock = threading.RLock()
-        self._effect: LightingEffect | None = None
-        self._effect_started = 0.0
         self._state_started = time.monotonic()
         self._animation_stop = threading.Event()
         self._animation_thread: threading.Thread | None = None
@@ -124,7 +120,6 @@ class OpenRgb:
                 self.client = None
                 return False
             self.device = devices[0]
-            self.device.set_mode("Static")
             return True
         except Exception as error:
             LOGGER.warning("Could not connect the OpenRGB Python SDK client: %s", error)
@@ -202,70 +197,40 @@ class OpenRgb:
         return 0.0
 
     def _apply_color(self, color: tuple[int, int, int]) -> None:
-        with self._lock:
-            try:
-                if self.client is None or self.device is None:
-                    if not self._server_available() or not self._connect():
-                        return
-                if color == self._last_color:
+        # Expressive capability holds this lock for an entire effect. Console
+        # yields each frame and keeps tracking automatic activity independently.
+        path = Path(os.getenv("AGI_OPENRGB_LOCK_PATH", "~/.agi/openrgb-device.lock")).expanduser()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a") as lease:
+                try:
+                    fcntl.flock(lease, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    self._last_color = None
                     return
-                self.device.set_color(self._color_class(*color))
-                self._last_color = color
-            except Exception as error:
-                LOGGER.warning("Could not update OpenRGB lighting: %s", error)
-                self._disconnect()
-
-    @staticmethod
-    def activity_defaults() -> dict:
-        """Expose the exact existing activity renderer settings, not approximated effects."""
-        return {"resting_color": RESTING_MINT, "online_base_color": DARK_ROSE,
-                "online_pulse_color": PLUM, "brightness": dict(BRIGHTNESS),
-                "cycle_seconds": dict(FULL_CYCLE_SECONDS),
-                "base_brightness": BASE_ROSE_BRIGHTNESS,
-                "waiting_peak_brightness": WAITING_ROSE_BRIGHTNESS,
-                "waiting_attack_release": [PULSE_ATTACK_FRACTION, PULSE_RELEASE_FRACTION],
-                "active_attack_release": [ACTIVE_PULSE_ATTACK_FRACTION, ACTIVE_PULSE_RELEASE_FRACTION]}
-
-    def set_effect(self, effect: LightingEffect) -> dict:
-        with self._scene_lock:
-            if not self._enabled() or self._animation_thread is None or not self._animation_thread.is_alive():
-                raise RuntimeError("OpenRGB lighting is disabled or unavailable")
-            self._effect = effect
-            self._effect_started = time.monotonic()
-            self._apply_color(effect.color_at(0))
-            LOGGER.info("Grace lighting effect: %s", effect)
-            return self.effect_status()
-
-    def effect_status(self) -> dict:
-        with self._scene_lock:
-            effect = self._effect
-            remaining = (max(0, effect.duration_seconds - (time.monotonic() - self._effect_started))
-                         if effect and effect.duration_seconds is not None else None)
-            details = {k: v for k, v in asdict(effect).items() if not k.startswith('_')} if effect else None
-            return {"active": bool(effect and (remaining is None or remaining > 0)), "effect": details,
-                    "remaining_seconds": remaining, "connected": self.device is not None,
-                    "activity_state": self.state,
-                    "morse_message_seconds": len(effect._morse) * effect.morse_unit_seconds if effect and effect.rhythm == 'morse' else None}
-
-    def clear_effect(self) -> dict:
-        with self._scene_lock:
-            self._effect = None
-            if self.state is not None:
-                self._apply_color(self.color_for_state(self.state))
-            return self.effect_status()
+                with self._lock:
+                    if self.client is None or self.device is None:
+                        if not self._server_available() or not self._connect():
+                            return
+                    if color == self._last_color:
+                        return
+                    if self._last_color is None:
+                        self.device.set_mode("Static")
+                    self.device.set_color(self._color_class(*color))
+                    self._last_color = color
+        except Exception as error:
+            LOGGER.warning("Could not update OpenRGB lighting: %s", error)
+            self._disconnect()
 
     def _animate(self) -> None:
         while not self._animation_stop.wait(UPDATE_INTERVAL_SECONDS):
             with self._scene_lock:
                 now = time.monotonic()
-                if self._effect is not None:
-                    elapsed = now - self._effect_started
-                    if self._effect.duration_seconds is None or elapsed < self._effect.duration_seconds:
-                        self._apply_color(self._effect.color_at(elapsed))
-                        continue
-                    self.clear_effect()
                 state = self.state
-                if state is None or state == "resting":
+                if state is None:
+                    continue
+                if state == "resting":
+                    self._apply_color(self.color_for_state(state))
                     continue
                 cycle = FULL_CYCLE_SECONDS[state]
                 phase_seconds = (now - self._state_started) % cycle
@@ -287,8 +252,7 @@ class OpenRgb:
                 self.state = state
                 self._state_started = time.monotonic()
                 self.brightness = self.brightness_for_state(state)
-                if self._effect is None:
-                    self._apply_color(self.color_for_state(state))
+                self._apply_color(self.color_for_state(state))
 
     def stop(self) -> None:
         self._animation_stop.set()
@@ -299,12 +263,6 @@ class OpenRgb:
         # instead of freezing at an arbitrary point in the animation.
         if self.client is not None and self.device is not None:
             self._apply_color(self.color_for_state("resting"))
-        self._effect = None
         self._disconnect()
-        if self.process and self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-
+        # The SDK server may also serve independent capability clients. Its
+        # lifetime belongs to the host, so Console does not terminate it here.

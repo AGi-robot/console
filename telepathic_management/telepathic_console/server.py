@@ -20,7 +20,6 @@ from fastapi.staticfiles import StaticFiles
 from cryptic_signal_core.telepathic_encoding import decode_text, encode_text
 from telepathy_receptor.identity import load_identity
 from telepathic_management.telepathic_console.openrgb import OpenRgb
-from telepathic_management.telepathic_console.lighting_catalog import resolve_effect, read_catalog, save_preset
 
 
 def _interface_dir() -> Path:
@@ -126,54 +125,6 @@ async def grace_activity(request: Request) -> None:
     _grace_activity_seen = time.monotonic()
     _grace_activity = state
     await asyncio.to_thread(_rgb.set_state, state)
-
-
-@app.put("/api/lighting")
-async def set_lighting(request: Request) -> dict:
-    """Replace the custom effect; activity updates resume when it ends."""
-    try:
-        payload = await request.json()
-        if not isinstance(payload, dict):
-            raise ValueError("Expected an effect object")
-        effect = await asyncio.to_thread(resolve_effect, payload)
-    except (ValueError, TypeError, OSError) as error:
-        raise HTTPException(status_code=422, detail=str(error)) from None
-    try:
-        if effect is None:
-            result = await asyncio.to_thread(_rgb.clear_effect)
-            return {**result, "selected": "default", "reason": payload.get("reason", "")}
-        return await asyncio.to_thread(_rgb.set_effect, effect)
-    except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from None
-
-
-@app.get("/api/lighting/catalog")
-async def lighting_catalog() -> dict:
-    try:
-        return await asyncio.to_thread(read_catalog)
-    except (ValueError, TypeError, OSError) as error:
-        raise HTTPException(status_code=422, detail=str(error)) from None
-
-
-@app.put("/api/lighting/catalog")
-async def save_lighting_preset(request: Request) -> dict:
-    try:
-        payload = await request.json()
-        if not isinstance(payload, dict):
-            raise ValueError("Expected a preset object")
-        return await asyncio.to_thread(save_preset, **payload)
-    except (ValueError, TypeError, OSError) as error:
-        raise HTTPException(status_code=422, detail=str(error)) from None
-
-
-@app.get("/api/lighting")
-async def get_lighting() -> dict:
-    return await asyncio.to_thread(_rgb.effect_status)
-
-
-@app.delete("/api/lighting")
-async def clear_lighting() -> dict:
-    return await asyncio.to_thread(_rgb.clear_effect)
 
 
 @app.get("/api/presence")
