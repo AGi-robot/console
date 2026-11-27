@@ -64,3 +64,8 @@ Effects can carry `reason` and `meaning` strings (up to 1000 characters each). `
 Install the matching Memory event support as well as Toolbox and Interactive. Related/recent lighting events are recalled into subsequent chat context and available through `lighting_history`. Grace can explain past choices when asked, or mention them in her reply without being asked. The record is scoped to the active conversation and persists across restarts. Saving a catalogue definition alone does not add it to regular memory; Interactive records the model's save action. Standalone Agentic trials do not use Grace's conversation memory.
 
 A custom effect can continue until Grace replaces it or selects default: leave `duration_seconds` unspecified or null. She can alternatively choose a duration. Morse permits 120 characters per effect; longer text needs separate effects. Status reports `morse_message_seconds` so the caller can choose enough time for a full transmission. Blink codes and colour transitions can have any personal meaning she saves; no vocabulary of meanings is imposed. A scheduler is still needed for activity outside chat or other existing triggers.
+
+
+## Disco
+
+The `disco` preset loops through the rainbow with a two-second heartbeat brightness rhythm. It stays active until Grace replaces it, chooses `default`, or selects another duration. Grace may choose it when the conversation feels celebratory, when you want to dance, or when she decides dancing fits the moment. These are examples for her judgement, not fixed triggers. A new built-in preset is added to existing runtime catalogues without replacing your saved colors or effects.

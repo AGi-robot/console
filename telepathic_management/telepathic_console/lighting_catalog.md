@@ -1,6 +1,6 @@
 # Grace's lighting catalogue
 
-Colours and effects are editable data. Examples are suggestions, with no fixed occasions or triggers.
+Colours and effects are editable data. Examples are suggestions, with no fixed occasions or triggers. Grace may choose disco for a celebration, dance, or moment when it seems fitting; these examples are not keyword triggers.
 The `default` preset restores the existing resting-mint and online-rose activity renderer.
 Its exact live settings are also exposed as `activity_defaults` by the catalogue API.
 Saved effects may carry `reason` and `meaning` strings for explanations and personal codes.
@@ -16,6 +16,7 @@ The single JSON block is read whenever a lighting request arrives. Brightness is
   },
   "effects": {
     "default": {},
+    "disco": {"rainbow": true, "transition_seconds": 2, "intermediate_steps": 24, "rhythm": "heartbeat", "rhythm_seconds": 2, "brightness": 0.55, "loop": true, "duration_seconds": null},
     "rainbow": {"rainbow": true, "transition_speed": "slow", "brightness": 0.4, "duration_seconds": 120},
     "red_white_green": {"start_color": "red", "transition_colors": ["white"], "end_color": "green", "transition_speed": "slow"},
     "pumpkin_purple": {"start_color": "pumpkin", "end_color": "purple", "transition_speed": "slow"},

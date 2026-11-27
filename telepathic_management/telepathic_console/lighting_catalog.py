@@ -75,6 +75,12 @@ def resolve_effect(payload, catalog=None):
 def read_catalog():
     with _LOCK:
         data = _parse(_document())
+        # New built-in effects appear in existing user catalogues without
+        # overwriting the user's saved colors or effects.
+        if _path().exists():
+            seed = _parse(_DEFAULT.read_text(encoding='utf-8'))
+            for category in ('colors', 'effects'):
+                data[category] = {**seed[category], **data[category]}
         from .openrgb import OpenRgb
         data['activity_defaults'] = OpenRgb.activity_defaults()
         data['effects']['default'] = {}
