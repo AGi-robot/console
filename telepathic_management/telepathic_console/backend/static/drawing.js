@@ -12,7 +12,7 @@
   for(const [feature,enabled] of Object.entries(config.features||{}))if(!enabled)document.querySelectorAll(`[data-feature="${feature}"]`).forEach(el=>el.hidden=true);
   document.title=`${assistantName} · Canvas Studio`;
   const canvas = $('drawingCanvas'), ctx = canvas.getContext('2d');
-  const WIDTH = 1000, HEIGHT = 650, KEY = 'grace-canvas-v1';
+  const WIDTH = 1000, HEIGHT = 650, KEY = 'aiva-canvas-v1';
   const MAX_IMAGE_CHARS = 8000000, MAX_ARTWORK_BYTES = 32 * 1024 * 1024;
   const drawingKinds = new Set(['path','curve','polygon','erase','line','rectangle','ellipse','text','letter','image']);
   const kinds = new Set([...drawingKinds,'select','move','delete','style','front','back','clear','undo','redo']);
@@ -23,7 +23,7 @@
   let lastStudyId = null;
   let apiSocket = null, replay = Promise.resolve();
   const clone = value => JSON.parse(JSON.stringify(value));
-  const status = text => { $('drawStatus').textContent = String(text).replaceAll('Grace',assistantName).replaceAll('AIVA',assistantName); };
+  const status = text => { $('drawStatus').textContent = String(text).replaceAll('AIVA',assistantName).replaceAll('AIVA',assistantName); };
   const uid = () => globalThis.crypto?.randomUUID?.() || `shape-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const fontFamily = a => fonts[a.font] || (a.kind==='letter' ? fonts.serif : fonts.sans);
   function save() { try { localStorage.setItem(KEY, JSON.stringify(objects)); } catch (_) { status('Browser storage is full; use Save artwork to keep your editable picture.'); } }
@@ -428,7 +428,7 @@
       const output=document.createElement('canvas');output.width=WIDTH;output.height=HEIGHT;
       const exportCtx=output.getContext('2d');exportCtx.fillStyle='white';exportCtx.fillRect(0,0,WIDTH,HEIGHT);
       exportCtx.drawImage(canvas,0,0);const link=document.createElement('a');
-      link.download='grace-drawing.png';link.href=output.toDataURL('image/png');link.click();render();
+      link.download='aiva-drawing.png';link.href=output.toDataURL('image/png');link.click();render();
     }catch(error){status(error.message);}
   });
   $('drawExportSvg').addEventListener('click',()=>{
@@ -460,7 +460,7 @@
         else if(a.kind==='letter')throw new Error('Letter pages are not supported in SVG export yet; export this artwork as PNG instead.');
       });
       const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}"><defs>${defs.join('')}</defs><rect width="100%" height="100%" fill="#ffffff"/>${body.join('')}</svg>`;
-      const blob=new Blob([svg],{type:'image/svg+xml'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='grace-artwork.svg';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const blob=new Blob([svg],{type:'image/svg+xml'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='aiva-artwork.svg';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }catch(error){status(error.message);}
   });
 
@@ -479,13 +479,13 @@
     return [...normalized.filter(isBackdrop),...normalized.filter(item=>!isBackdrop(item))];
   }
   function replaceArtwork(document) {
-    if(!document||document.version!==1)throw new Error('Unsupported artwork file. Open a Grace artwork JSON file.');
+    if(!document||document.version!==1)throw new Error('Unsupported artwork file. Open a AIVA artwork JSON file.');
     const next=documentObjects(document.objects);finishGesture(true);checkpoint();objects=next;selected=null;
     render();save();syncControls();
   }
   $('saveProject').addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify({version:1,objects},null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='grace-artwork.json';link.click();
+    const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='aiva-artwork.json';link.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);status('Editable artwork saved. Use Open artwork to continue later.');
   });
   $('importProject').addEventListener('change',async e=>{
@@ -514,7 +514,7 @@
   document.querySelectorAll('[data-prompt]').forEach(button=>button.addEventListener('click',()=>{
     $('drawPrompt').value=button.dataset.prompt;$('drawPrompt').focus();
   }));
-  // A detailed JPEG render lets Grace assess composition and clean up her prior pass.
+  // A detailed JPEG render lets AIVA assess composition and clean up her prior pass.
   async function snapshot() {
     try {
       await waitForImages();
@@ -565,7 +565,7 @@
     if(event.type==='canvas_feedback' && event.identifier===lastStudyId){$('reviewStatus').textContent=String(event.content||'');return;}
     if(!requestId||event.identifier!==requestId)return;
     if(event.type==='canvas_start') { status(`${assistantName} is planning the drawing…`);$('drawResponse').textContent=`${assistantName} is planning the composition, colour and light…`; }
-    else if(event.type==='canvas_progress') { const message=String(event.content||`${assistantName} is refining the drawing…`);status(message);$('drawResponse').textContent=message.replaceAll('Grace',assistantName).replaceAll('AIVA',assistantName); }
+    else if(event.type==='canvas_progress') { const message=String(event.content||`${assistantName} is refining the drawing…`);status(message);$('drawResponse').textContent=message.replaceAll('AIVA',assistantName).replaceAll('AIVA',assistantName); }
     else if(event.type==='canvas_snapshot_request') {
       // Answer after the replayed strokes settle so the screenshot shows her draft.
       status(`${assistantName} is reviewing the draft…`);

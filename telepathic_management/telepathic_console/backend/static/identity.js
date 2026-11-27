@@ -1,12 +1,12 @@
 /* Apply the companion's shared identity to static and dynamically-created UI text. */
 (() => {
   'use strict';
-  const fallback = { name: 'Grace', tagline: 'Talk, reflect, and be understood.' };
+  const fallback = { name: 'AIVA', tagline: 'Talk, reflect, and be understood.' };
 
   function replaceName(value, name) {
     return String(value)
-      .replace(/\bGRACE\b/g, name.toUpperCase())
-      .replace(/\bGrace\b/g, name);
+      .replace(/\bAIVA\b/g, name.toUpperCase())
+      .replace(/\bAIVA\b/g, name);
   }
 
   function updateTree(root, name, includeTextarea = false) {

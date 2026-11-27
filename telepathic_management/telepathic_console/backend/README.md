@@ -8,7 +8,7 @@ The companion page pairs a live VRM chamber with a scrolling conversation.
 retains the original robot animation styles. The dark palette is the default
 for a new companion page, while saved theme preferences are honored.
 
-`avatar.js` keeps Grace's VRM visible in both presence states. Offline she rests with her head lowered and eyes closed; online she raises her head slightly and opens her eyes halfway. The camera switch is off for full body and on for a zoomed-in portrait;
+`avatar.js` keeps AIVA's VRM visible in both presence states. Offline she rests with her head lowered and eyes closed; online she raises her head slightly and opens her eyes halfway. The camera switch is off for full body and on for a zoomed-in portrait;
 changing it resets the camera, dragging orbits it, and pointer motion gently turns her head.
 The chamber background is a local WebP asset. Nineteen bubbles rise in front
 of and behind the avatar, with moving light refractions and twinkling glints.
@@ -16,25 +16,25 @@ The decorative layers let pointer events pass through to the camera controls.
 Bubbles, reflections, glints, and floating motion respect reduced-motion preferences. Chat badges are snapshots of the loaded
 VRM; they fall back to a neutral emblem if capture is unavailable.
 
-Grace remains visible while AIVA is offline. Chat submission and
+AIVA remains visible while AIVA is offline. Chat submission and
 response streaming continue to use the existing telepathic API and ROS bridge.
-Grace's memory is a SQLite library inside the `telepathy_receptor` process.
+AIVA's memory is a SQLite library inside the `telepathy_receptor` process.
 
 ROS packaging installs the companion frontend and its backend static assets,
-including `console.css`, `assets/grace-chamber.webp`, and the Canvas Studio UI.
-The reusable action language and SVG renderer live in the separate `grace-canvas`
+including `console.css`, `assets/aiva-chamber.webp`, and the Canvas Studio UI.
+The reusable action language and SVG renderer live in the separate `aiva-canvas`
 Python library.
 
-## Grace activity lighting
+## AIVA activity lighting
 
-The Console reports Grace's thinking, responding, working, waiting, and resting
+The Console reports AIVA's thinking, responding, working, waiting, and resting
 states to a loopback OpenRGB SDK server. The Python `openrgb-python` client keeps
 one connection open and controls the `MSI Z790 GAMING PLUS WIFI` motherboard.
 Online waiting stays in the deeper rose palette, making a soft beat from dark
 rose (`#80374E`) to brighter rose (`#AD4263`) once per second. Thinking,
 responding, and working pulse from dark rose to saturated rose (`#BF496D`) every
 0.4 seconds, with a short 0.12-second glow and a 0.28-second dark interval.
-When Grace is resting or AIVA quits, the controller leaves the same green mint
+When AIVA is resting or AIVA quits, the controller leaves the same green mint
 (`#58C77E`) at the resting brightness. If the Console stops
 reporting activity, it switches to resting after 12 seconds. The controller
 starts the OpenRGB AppImage from `~/openrgb/` by default; `AGI_OPENRGB_APPIMAGE`
@@ -63,37 +63,37 @@ same API with `AGI_CANVAS_API_KEY` configured on the host.
 The API is a WebSocket at `ws://<host>/api/canvas/ws` (`wss://` behind TLS).
 Clients send a `request` packet containing the same JSON payload as the Canvas
 page, then receive the `canvas_*` events. They send `snapshot` packets when
-Grace requests a fresh render and `feedback` packets for a reviewed study. When
+AIVA requests a fresh render and `feedback` packets for a reviewed study. When
 `AGI_CANVAS_API_KEY` is set, direct clients first send
 `{"type":"auth","token":"…"}`. The host WebUI is loopback-only by default;
 set a key and use HTTPS/WSS before allowing remote clients to connect.
 Artwork persists in that browser's local storage (up to 100 objects).
 
 For letters, enter paragraphs in the multiline Text field and choose **Add letter
-page**, or ask Grace to write a letter. A portrait page uses serif text, automatic
+page**, or ask AIVA to write a letter. A portrait page uses serif text, automatic
 word wrapping (including long URLs), blank lines between paragraphs, adjustable
 margins, line spacing, and left/center/right alignment. New pages use a 16 px font;
 select a page with **Select / move** to load its text and formatting, adjust Size
 or other controls, then choose **Update letter page**. Changes support undo/redo.
 Letters currently fit one page; overflow displays an error so text is not silently
 cut off. Shorten the letter or reduce font size, margins, or spacing. PNG export
-includes the formatted page. Grace uses the `letter` canvas action for this layout.
+includes the formatted page. AIVA uses the `letter` canvas action for this layout.
 
 The page sends a request and the current drawing objects/selection to AIVA's
 `/telepathic/stimulus`. AIVA calls the configured OpenAI-compatible model with a
 `canvas_draw` tool. This requires an endpoint/model supporting `tools` and
 `tool_choice`. AIVA validates the resulting actions and publishes them on
 `/telepathic/response`, tagged with the request identifier. The requesting page
-replays strokes, shape outlines, progressive colour fills, and text visibly; **Stop Grace** interrupts replay and
+replays strokes, shape outlines, progressive colour fills, and text visibly; **Stop AIVA** interrupts replay and
 ignores later results for that request. Completed actions can be undone.
 
 Text in response events is Cypher-encoded by the receptor and decoded by the
 Console after rosbridge. Event type, request identifier, Canvas actions, and
 image payloads remain structured fields in the JSON event.
 
-Grace sees object coordinates and text supplied by the page. The page also renders a
+AIVA sees object coordinates and text supplied by the page. The page also renders a
 downscaled JPEG screenshot of the canvas and sends it with each request, and again when
-Grace asks for a fresh look between passes (`canvas_snapshot_request` answered on
+AIVA asks for a fresh look between passes (`canvas_snapshot_request` answered on
 `/aiva/canvas_snapshot`), so a vision-capable endpoint can observe what it actually drew
 and correct placement before refining. Endpoints that reject image content fall back to
 text-only planning automatically. Validated actions stream to the browser for replay
@@ -108,7 +108,7 @@ so the node and packaged pages match.
 
 ### Raster painting (MOSS-Image)
 
-Select **Generate image with MOSS** to let Grace request a raster painting with the canvas
+Select **Generate image with MOSS** to let AIVA request a raster painting with the canvas
 `image` action: `{"kind": "image", "prompt": "...", "x", "y", "width", "height"}`. The
 server permits at most two image actions per request and preserves their action order
 relative to vector overlays and edits. AIVA generates the bitmap server-side through the MossInfer
@@ -125,13 +125,13 @@ artwork imports accept up to 32 MiB. If browser storage fills, use **Save artwor
 
 **Draw with tools** is the default and excludes image actions even with MOSS installed.
 **Draw from MOSS reference** generates one separate study image, sends it with the
-current canvas screenshot to Grace, and permits only tool strokes/shapes on the artwork.
+current canvas screenshot to AIVA, and permits only tool strokes/shapes on the artwork.
 Reference images do not become layers or appear in exports. Fresh canvas screenshots
 drive later review passes; this mode reports missing vision/screenshots rather than
 silently proceeding without visual feedback.
 
 After completion, **Keep as example** and **Needs improvement** save your review to
-Grace's SQLite `drawing_studies`. Relevant reviewed summaries and short approved
+AIVA's SQLite `drawing_studies`. Relevant reviewed summaries and short approved
 recipes are included in future requests, including drawing without a reference.
 This is curated memory and practice support; no model weights are trained automatically.
 
@@ -143,18 +143,18 @@ fills, and closed freehand contours. Select an object to load its paint settings
 then use **Apply to selection**; front/back controls reorder objects. Letter
 controls are under **Typography & letter layout**. Existing saved art still loads.
 
-Grace's drawing tool accepts `polygon`, `smooth`, `fill_color`, `gradient_color`,
+AIVA's drawing tool accepts `polygon`, `smooth`, `fill_color`, `gradient_color`,
 `gradient`, `opacity`, `brush`, and `stroke`, plus `style`, `front`, and `back`
 editing actions. Her instructions encourage layered compositions, varied palettes,
 consistent lighting, and shadows/highlights. This expands vector illustration
-capabilities. On top of vectors, Grace can also request a raster painting (canvas
+capabilities. On top of vectors, AIVA can also request a raster painting (canvas
 `image` action), rendered server-side by the MossInfer MOSS-Image engine and published
 as a `canvas_image` event. Live drawing quality still depends on the configured model's
 tool output.
 
 ### Vision feedback
 
-With a vision-capable model (such as Ministral 3 14B Instruct) as `AIVA_LLM_MODEL`, Grace
+With a vision-capable model (such as Ministral 3 14B Instruct) as `AIVA_LLM_MODEL`, AIVA
 compares an attached canvas screenshot with the request during drawing and can reposition,
 restyle, or delete her own shapes between passes instead of planning blind. Set
 `AIVA_SNAPSHOT_TIMEOUT_SECONDS` (default 10) to tune how long a pass waits for the browser's

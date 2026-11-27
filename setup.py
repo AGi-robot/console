@@ -21,7 +21,6 @@ setup(
         *shared_data,
     ],
     install_requires=["setuptools", "fastapi", "uvicorn", "websockets", "openrgb-python>=0.3.8,<0.4"],
-    package_data={"telepathic_management.telepathic_console": ["lighting_catalog.md"]},
     zip_safe=True,
     maintainer="OppaAI",
     maintainer_email="oppa.ai.org@gmail.com",

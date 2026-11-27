@@ -57,9 +57,9 @@ h2 { margin: 0; font-size: 12px; font-weight: 650; }
 .empty-canvas-state h3 { font: 34px/1.2 Georgia, serif; letter-spacing: -1px; margin: 12px 0; }
 .empty-canvas-state p { font-size: 12px; line-height: 1.8; color: #8c817b; }
 .canvas-footnote { min-height: 29px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 18px; color: var(--muted); font-size: 10px; border-bottom: 1px solid var(--line); background: var(--board); }
-.grace-dock { padding: 15px 18px 9px; background: var(--panel); }
-.grace-response { display: flex; gap: 10px; margin-bottom: 12px; }
-.grace-avatar { display: grid; place-items: center; flex-shrink: 0; width: 31px; height: 31px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: italic 19px Georgia, serif; }
+.aiva-dock { padding: 15px 18px 9px; background: var(--panel); }
+.aiva-response { display: flex; gap: 10px; margin-bottom: 12px; }
+.aiva-avatar { display: grid; place-items: center; flex-shrink: 0; width: 31px; height: 31px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: italic 19px Georgia, serif; }
 .response-copy { min-width: 0; flex: 1; }
 .response-copy strong { font-weight: 650; font-size: 12px; }
 .response-copy strong span { font-size: 8px; font-weight: 500; letter-spacing: 1.2px; color: var(--muted); margin-left: 9px; }
@@ -123,7 +123,7 @@ input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
   main { flex: 1; min-height: 0; display: flex; }
   .studio { flex: 1; min-height: 0; }
   .artwork-panel { min-height: 0; }
-  .artboard-toolbar, .canvas-footnote, .grace-dock { flex-shrink: 0; }
+  .artboard-toolbar, .canvas-footnote, .aiva-dock { flex-shrink: 0; }
   .paper { flex: 1; min-height: 80px; container-type: size; }
   #drawingCanvas { width: min(100cqw, calc(100cqh * 1.53846154)); height: auto; max-height: 100%; }
   .inspector { overflow-y: auto; }
@@ -132,7 +132,7 @@ input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
   .studio-header { height: 60px; flex-basis: 60px; }
   main { padding: 12px; }
   .paper { padding: 20px; }
-  .grace-dock { padding-top: 10px; }
+  .aiva-dock { padding-top: 10px; }
   .empty-mark { width: 55px; height: 47px; margin-bottom: 3px; }
   .empty-canvas-state h3 { font-size: 28px; margin: 8px 0; }
 }
@@ -180,7 +180,7 @@ input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
   .empty-canvas-state h3 { font-size: 24px; margin: 6px 0; }
   .empty-canvas-state p { font-size: 10px; margin: 5px 0; line-height: 1.5; }
   .canvas-footnote { padding: 6px 12px; font-size: 8px; }
-  .grace-dock { padding: 13px 12px 8px; }
+  .aiva-dock { padding: 13px 12px 8px; }
   #drawPrompt { font-size: 12px; padding: 9px; }
   #drawAsk { padding: 7px 10px; font-size: 11px; }
   #drawAsk span { display: none; }

@@ -10,7 +10,7 @@
   let inferenceResponding = false;
   let agenticWorkActive = false;
   let inferenceTps = 0;
-  let companionName = window.AGIIdentity?.name || 'Grace';
+  let companionName = window.AGIIdentity?.name || 'AIVA';
   let lastRgbState = '';
   let lastRgbReportAt = 0;
 
@@ -19,7 +19,7 @@
     if (state === lastRgbState && now - lastRgbReportAt < 4000) return;
     lastRgbState = state;
     lastRgbReportAt = now;
-    fetch('/api/presence/grace', {
+    fetch('/api/activity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state }),
@@ -44,18 +44,18 @@
   }
 
   window.addEventListener('agi-identity-ready', (event) => {
-    companionName = event.detail?.name || 'Grace';
+    companionName = event.detail?.name || 'AIVA';
     updateLabel();
   });
 
-  window.addEventListener('agi-grace-inference', (event) => {
+  window.addEventListener('agi-aiva-inference', (event) => {
     inferenceActive = event.detail?.active === true;
     inferenceResponding = event.detail?.responding === true;
     inferenceTps = Math.max(0, Number(event.detail?.tps) || 0);
     updateLabel();
   });
 
-  window.addEventListener('agi-grace-agentic-work', (event) => {
+  window.addEventListener('agi-aiva-agentic-work', (event) => {
     agenticWorkActive = event.detail?.active === true;
     updateLabel();
   });
