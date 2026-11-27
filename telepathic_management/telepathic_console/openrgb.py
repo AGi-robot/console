@@ -1,4 +1,4 @@
-"""Optional local OpenRGB bridge for Grace's activity lighting."""
+"""Optional local OpenRGB bridge for AIVA's activity lighting."""
 from __future__ import annotations
 
 import fcntl
@@ -101,7 +101,7 @@ class OpenRgb:
         self.set_state("resting")
         self._animation_stop.clear()
         self._animation_thread = threading.Thread(
-            target=self._animate, name="grace-openrgb-animation", daemon=True
+            target=self._animate, name="aiva-openrgb-animation", daemon=True
         )
         self._animation_thread.start()
 
@@ -110,7 +110,7 @@ class OpenRgb:
             self.client = self._client_class(
                 address=SDK_HOST,
                 port=SDK_PORT,
-                name="Grace activity lighting",
+                name="AIVA activity lighting",
                 protocol_version=4,
             )
             devices = self.client.get_devices_by_name(DEVICE, exact=False)
@@ -138,7 +138,7 @@ class OpenRgb:
 
     @staticmethod
     def brightness_for_state(state: str) -> float:
-        """Keep the established baseline brightness for each Grace activity state."""
+        """Keep the established baseline brightness for each AIVA activity state."""
         return BRIGHTNESS[state]
 
     @staticmethod
@@ -259,7 +259,7 @@ class OpenRgb:
         if self._animation_thread is not None:
             self._animation_thread.join(timeout=2)
             self._animation_thread = None
-        # AIVA can stop while Grace is active. Leave the board at its offline mint
+        # AIVA can stop while AIVA is active. Leave the board at its offline mint
         # instead of freezing at an arbitrary point in the animation.
         if self.client is not None and self.device is not None:
             self._apply_color(self.color_for_state("resting"))

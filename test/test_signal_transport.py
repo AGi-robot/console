@@ -18,7 +18,7 @@ def test_console_encodes_structured_unicode_before_ros_publish():
         async def __aenter__(self): return self
         async def __aexit__(self, *args): pass
         async def send(self, value): sent.append(json.loads(value))
-    payload = json.dumps({'text': 'Hello Grace — 你好', 'web_search': True})
+    payload = json.dumps({'text': 'Hello AIVA — 你好', 'web_search': True})
     with patch.object(server.websockets, 'connect', return_value=Bridge()):
         response = TestClient(server.app).post('/api/telepathic/send', content=payload)
     assert response.status_code == 200
@@ -46,21 +46,21 @@ def test_presence_has_no_entity_import_dependency(monkeypatch):
     assert client.get('/api/presence').json()['aiva_online'] is True
 
 
-def test_grace_activity_sets_validated_rgb_state(monkeypatch):
-    monkeypatch.setattr(server, '_grace_activity', 'resting')
-    monkeypatch.setattr(server, '_grace_activity_seen', None)
+def test_aiva_activity_sets_validated_rgb_state(monkeypatch):
+    monkeypatch.setattr(server, '_aiva_activity', 'resting')
+    monkeypatch.setattr(server, '_aiva_activity_seen', None)
     applied = []
     monkeypatch.setattr(server._rgb, 'set_state', applied.append)
     client = TestClient(server.app)
-    assert client.post('/api/presence/grace', json={'state': 'responding'}).status_code == 204
+    assert client.post('/api/activity', json={'state': 'responding'}).status_code == 204
     assert applied == ['responding']
-    assert client.post('/api/presence/grace', json={'state': 'sleeping'}).status_code == 422
+    assert client.post('/api/activity', json={'state': 'sleeping'}).status_code == 422
     monkeypatch.setenv('AGI_WEB_TELEOPS_CONSOLE_AIVA_LOCAL', 'false')
     assert client.post('/api/presence/aiva').status_code == 204
     assert client.get('/api/presence').json()['aiva_online'] is True
 
 
-def test_rgb_brightness_tracks_grace_activity_state():
+def test_rgb_brightness_tracks_aiva_activity_state():
     from telepathic_management.telepathic_console.openrgb import OpenRgb
     assert OpenRgb.brightness_for_state('resting') == 0.50
     assert OpenRgb.brightness_for_state('waiting') == 0.50
@@ -92,8 +92,10 @@ def test_shared_envelope_uses_configured_channel_and_source(monkeypatch):
 def test_shared_identity_drives_console_api_and_canvas_config():
     client = TestClient(server.app)
     identity = client.get('/api/identity').json()
-    assert identity['name'] == 'Grace'
+    from telepathy_receptor.identity import load_identity
+    assert identity['name'] == load_identity()['name']
     assert identity['tagline'] == 'Talk, reflect, and be understood.'
     config = client.get('/api/canvas/config.js')
     assert config.status_code == 200
-    assert b'"assistantName":"Grace"' in config.content
+    import json
+    assert ('\"assistantName\":' + json.dumps(identity['name'], separators=(',', ':'))).encode() in config.content

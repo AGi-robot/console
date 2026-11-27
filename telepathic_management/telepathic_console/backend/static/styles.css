@@ -1399,7 +1399,7 @@
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.1);
         }
 
-        .message.grace {
+        .message.aiva {
             background: rgba(255, 105, 180, 0.1);
             color: #ff69b4;
             margin-right: auto;
@@ -2195,17 +2195,17 @@ h1 {
     border: 1px solid rgba(130, 73, 108, .36);
     box-shadow: inset 3px 2px 4px rgba(255,255,255,.86), inset -3px -3px 5px rgba(92,48,77,.21), 2px 5px 7px rgba(58,34,53,.19);
 }
-/* Grace's VRM stays visible; the physical AuRoRA robot can appear beside her. */
-.grace-avatar-stage { display: block; width: min(260px, 60vw); height: 292px; }
+/* AIVA's VRM stays visible; the physical AuRoRA robot can appear beside her. */
+.aiva-avatar-stage { display: block; width: min(260px, 60vw); height: 292px; }
 #robotVrmCanvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #robotVrmCanvas:active { cursor: grabbing; }
 .robot-container.aiva-online { height: 330px; }
-.robot-container.grace-only { height: 390px; }
-.robot-container.aiva-online .grace-avatar-stage,
-.robot-container.grace-only .grace-avatar-stage { display: block; }
-.robot-container.grace-only .grace-avatar-stage { width: min(340px, 86vw); height: 360px; }
-.robot-container.grace-only .robot { display: none; }
-.robot-container.aiva-online .grace-avatar-stage { position: relative; z-index: 1; }
+.robot-container.aiva-only { height: 390px; }
+.robot-container.aiva-online .aiva-avatar-stage,
+.robot-container.aiva-only .aiva-avatar-stage { display: block; }
+.robot-container.aiva-only .aiva-avatar-stage { width: min(340px, 86vw); height: 360px; }
+.robot-container.aiva-only .robot { display: none; }
+.robot-container.aiva-online .aiva-avatar-stage { position: relative; z-index: 1; }
 .robot-container.aiva-online .robot {
     --robot-scale: 1.04;
     --poke-target-scale: 1;
@@ -2225,8 +2225,8 @@ h1 {
 }
 
 /* The same original robot appears as a tiny, shaded chat companion. */
-.message.grace { display: flow-root; }
-.grace-mini-avatar {
+.message.aiva { display: flow-root; }
+.aiva-mini-avatar {
     position: relative;
     float: left;
     width: 46px;
@@ -2238,7 +2238,7 @@ h1 {
     background: var(--panel-raised);
     box-shadow: 1px 2px 0 var(--shell-shadow);
 }
-.grace-mini-avatar .robot {
+.aiva-mini-avatar .robot {
     position: absolute;
     top: 0;
     left: 50%;
@@ -2250,22 +2250,22 @@ h1 {
     animation: none;
     filter: none;
 }
-.grace-mini-avatar .robot-head,
-.grace-mini-avatar .robot-body,
-.grace-mini-avatar .arm-left,
-.grace-mini-avatar .arm-right { visibility: visible; }
-.grace-mini-avatar .speech-bubble,
-.grace-mini-avatar .speaking-waves,
-.grace-mini-avatar .pet-counter,
-.grace-mini-avatar .poke-counter,
-.grace-mini-avatar .emotion-indicator { display: none; }
+.aiva-mini-avatar .robot-head,
+.aiva-mini-avatar .robot-body,
+.aiva-mini-avatar .arm-left,
+.aiva-mini-avatar .arm-right { visibility: visible; }
+.aiva-mini-avatar .speech-bubble,
+.aiva-mini-avatar .speaking-waves,
+.aiva-mini-avatar .pet-counter,
+.aiva-mini-avatar .poke-counter,
+.aiva-mini-avatar .emotion-indicator { display: none; }
 .message.user {
     color: var(--ink);
     background: var(--panel-raised);
     border-color: var(--line);
     box-shadow: 1px 2px 0 var(--shell-shadow);
 }
-.message.grace {
+.message.aiva {
     color: var(--ink);
     background: var(--panel);
     border-color: var(--line);
@@ -2348,14 +2348,14 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
     .robot-container.aiva-online {
         height: auto;
     }
-    .robot-container.aiva-online .grace-avatar-stage {
+    .robot-container.aiva-online .aiva-avatar-stage {
         width: min(760px, 82vw);
         height: 100%;
     }
-    .robot-container.grace-only {
+    .robot-container.aiva-only {
         height: auto;
     }
-    .robot-container.grace-only .grace-avatar-stage {
+    .robot-container.aiva-only .aiva-avatar-stage {
         width: min(760px, 82vw);
         height: 100%;
     }
@@ -2395,8 +2395,8 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
         overflow-x: auto;
         white-space: nowrap;
     }
-    .chat-container .message.grace { display: flex; }
-    .chat-container .grace-mini-avatar {
+    .chat-container .message.aiva { display: flex; }
+    .chat-container .aiva-mini-avatar {
         flex: 0 0 40px;
         width: 40px;
         height: 44px;
@@ -2416,13 +2416,13 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
         flex-basis: 0;
         min-height: 220px;
     }
-    .robot-container.aiva-online .grace-avatar-stage { height: 100%; }
-    .robot-container.grace-only {
+    .robot-container.aiva-online .aiva-avatar-stage { height: 100%; }
+    .robot-container.aiva-only {
         height: auto;
         flex-basis: 0;
         min-height: 250px;
     }
-    .robot-container.grace-only .grace-avatar-stage { height: 100%; }
+    .robot-container.aiva-only .aiva-avatar-stage { height: 100%; }
     .chat-container { min-height: 64px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2433,9 +2433,9 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
     .theme-toggle { padding: 6px 8px; }
     .robot-container.aiva-online { width: 100%; }
     /* Reserve a 100px side slot for AuRoRA and keep its touch targets full size. */
-    .robot-container.aiva-online { --grace-stage-width: min(220px, calc(100% - 100px)); }
-    .robot-container.aiva-online .grace-avatar-stage {
-        width: var(--grace-stage-width);
+    .robot-container.aiva-online { --aiva-stage-width: min(220px, calc(100% - 100px)); }
+    .robot-container.aiva-online .aiva-avatar-stage {
+        width: var(--aiva-stage-width);
         margin-right: 100px;
     }
     .robot-container.aiva-online .robot {
@@ -2447,8 +2447,8 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
     }
     .robot-container.aiva-online .cheek-poke-zone.left { left: 25px; }
     .robot-container.aiva-online .cheek-poke-zone.right { right: 5px; }
-    .robot-container.grace-only { height: 320px; flex-basis: 320px; }
-    .robot-container.grace-only .grace-avatar-stage { width: min(280px, 86vw); height: 300px; }
+    .robot-container.aiva-only { height: 320px; flex-basis: 320px; }
+    .robot-container.aiva-only .aiva-avatar-stage { width: min(280px, 86vw); height: 300px; }
     @keyframes auro-small-float {
         0%, 100% { transform: translateY(0) scale(var(--robot-scale, .35)); }
         50% { transform: translateY(-5px) scale(var(--robot-scale, .35)); }
@@ -2465,18 +2465,18 @@ html[data-theme="dark"] .container { box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0
         height: 248px;
         flex-basis: 248px;
     }
-    .robot-container.aiva-online .grace-avatar-stage {
-        width: var(--grace-stage-width, 220px);
+    .robot-container.aiva-online .aiva-avatar-stage {
+        width: var(--aiva-stage-width, 220px);
         height: 220px;
     }
-    .robot-container.grace-only {
+    .robot-container.aiva-only {
         height: 320px;
         flex-basis: 320px;
     }
 }
 
-/* Grace's display chamber: glass highlights, luminous coolant and slow bubbles. */
-.grace-avatar-stage {
+/* AIVA's display chamber: glass highlights, luminous coolant and slow bubbles. */
+.aiva-avatar-stage {
     position: relative;
     isolation: isolate;
     overflow: visible;

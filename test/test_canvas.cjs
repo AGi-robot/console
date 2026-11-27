@@ -53,7 +53,7 @@ function studio({motion=false} = {}) {
   vm.runInNewContext(source,sandbox,{filename:'drawing.js'});
   return {
     element,images,draws,clips,
-    artwork:()=>JSON.parse(storage.get('grace-canvas-v1')||'[]'),
+    artwork:()=>JSON.parse(storage.get('aiva-canvas-v1')||'[]'),
     socket:()=>sockets.at(-1),
     respond:event=>sockets.at(-1).deliver(event),
     async loadImages(){for(const image of images)if(!image.done){image.done=true;image.onload();}await tick();},

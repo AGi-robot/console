@@ -1,4 +1,4 @@
-/* Grace's 3D VRM stays present and changes pose with the AIVA heartbeat. */
+/* AIVA's 3D VRM stays present and changes pose with the AIVA heartbeat. */
 (() => {
   'use strict';
 
@@ -37,7 +37,7 @@
     camera.updateProjectionMatrix();
   }
 
-  // Crop the full-view cable drawing using the same camera framing as Grace.
+  // Crop the full-view cable drawing using the same camera framing as AIVA.
   function syncProbeView() {
     if (!probes || !fullFrame) return;
     if (cameraMode === 'full') {
@@ -75,7 +75,7 @@
       const bone = humanoid?.getRawBoneNode(name);
       if (bone) bones[name] = { bone, x: bone.rotation.x, y: bone.rotation.y, z: bone.rotation.z };
     }
-    // Let the arms and legs hang loosely while Grace rests in the chamber.
+    // Let the arms and legs hang loosely while AIVA rests in the chamber.
     if (bones.neck) bones.neck.x -= 0.09;
     if (bones.head) { bones.head.x -= 0.24; bones.head.z -= 0.06; }
     if (bones.leftUpperArm) bones.leftUpperArm.z = 1.28;
@@ -101,7 +101,7 @@
     // Match Aiko's gentle, asynchronous breathing and tiny head micro-sway.
     apply('spine', 0.007 * Math.sin((2 * Math.PI * (t - 0.08)) / 3.5));
     apply('chest', 0.014 * breathe);
-    // Grace rests with her head bowed offline; online she gently raises it.
+    // AIVA rests with her head bowed offline; online she gently raises it.
     const awakeLift = 0.14 * awakeBlend;
     apply('head', awakeLift + 0.0045 * drift(0.47, 0.4), 0.016 * drift(0.41) + 0.007 * drift(0.53, 2.1), 0.006 * drift(0.19, 1.1));
     apply('neck', (0.025 * awakeBlend) + 0.003 * drift(0.67, 1.7), 0.004 * drift(0.59), 0);
@@ -144,7 +144,7 @@
 
       const loader = new GLTFLoader();
       loader.register((parser) => new VRMLoaderPlugin(parser));
-      const gltf = await loader.loadAsync('/static/assets/Grace.vrm');
+      const gltf = await loader.loadAsync('/static/assets/AIVA.vrm');
       const vrm = gltf.userData.vrm;
       if (!vrm) throw new Error('The avatar file did not contain a VRM model');
       // Match the body skin to the cooler face without tinting clothes or hair.
@@ -191,7 +191,7 @@
       renderer.render(scene, camera);
       container.classList.add('avatar-loaded');
       try {
-        document.body.style.setProperty('--grace-portrait', `url("${canvas.toDataURL('image/webp')}")`);
+        document.body.style.setProperty('--aiva-portrait', `url("${canvas.toDataURL('image/webp')}")`);
         document.body.classList.add('avatar-portrait-ready');
       } catch (_) { /* Keep the neutral badge if canvas capture is unavailable. */ }
       frameCamera(selectedMode);
@@ -248,16 +248,16 @@
     container.classList.toggle('aiva-online', aivaOnline);
     container.classList.toggle('aurora-online', auroraOnline);
     container.classList.toggle('aurora-only', auroraOnline && !aivaOnline);
-    container.classList.toggle('grace-only', aivaOnline && !auroraOnline);
+    container.classList.toggle('aiva-only', aivaOnline && !auroraOnline);
     try {
       await loadAvatar();
       avatar.resize();
       if (!document.hidden && !frame) frame = requestAnimationFrame(render);
     } catch (error) {
-      console.error('Could not load Grace.vrm:', error);
-      container.classList.remove('aiva-online', 'grace-only');
+      console.error('Could not load AIVA.vrm:', error);
+      container.classList.remove('aiva-online', 'aiva-only');
       const presence = document.getElementById('aivaPresence');
-      if (presence) presence.textContent = `${window.AGIIdentity?.name || 'Grace'} avatar unavailable`;
+      if (presence) presence.textContent = `${window.AGIIdentity?.name || 'AIVA'} avatar unavailable`;
     }
   }
 

@@ -1,20 +1,20 @@
-/* Browser-local, illustrative playback. No prompt is submitted to Grace. */
-const companionName = () => window.AGIIdentity?.name || 'Grace';
+/* Browser-local, illustrative playback. No prompt is submitted to AIVA. */
+const companionName = () => window.AGIIdentity?.name || 'AIVA';
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
   const modules = {
-    user: {name:'Your browser', icon:'♡', type:'http', kind:'Console frontend', x:105,y:115, subtitle:'WebUI · frontend', location:'The web browser on your device', description:'The frontend of Console: the page where you enter prompts and see Grace’s replies. It sends requests to the Console backend. In this preview, everything stays in your browser.', input:'Your text, or a Canvas request', output:'HTTP chat request / Canvas WebSocket'},
-    console: {name:'Console backend',icon:'▣',type:'http',kind:'Console backend process',x:105,y:285,subtitle:'Python web server',location:'telepathic_console · outside Grace',description:'The server side of Console, separate from the browser frontend. It serves the WebUI, encodes outgoing prompts, and relays rosbridge events. It decodes response text before forwarding it to the browser.',input:'/api/telepathic/send or /api/canvas/ws',output:'Encoded stimulus; decoded response events'},
+    user: {name:'Your browser', icon:'♡', type:'http', kind:'Console frontend', x:105,y:115, subtitle:'WebUI · frontend', location:'The web browser on your device', description:'The frontend of Console: the page where you enter prompts and see AIVA’s replies. It sends requests to the Console backend. In this preview, everything stays in your browser.', input:'Your text, or a Canvas request', output:'HTTP chat request / Canvas WebSocket'},
+    console: {name:'Console backend',icon:'▣',type:'http',kind:'Console backend process',x:105,y:285,subtitle:'Python web server',location:'telepathic_console · outside AIVA',description:'The server side of Console, separate from the browser frontend. It serves the WebUI, encodes outgoing prompts, and relays rosbridge events. It decodes response text before forwarding it to the browser.',input:'/api/telepathic/send or /api/canvas/ws',output:'Encoded stimulus; decoded response events'},
     cypher: {name:'Cypher',icon:'◇',type:'python',kind:'Shared Python codec',x:285,y:115,subtitle:'Encode / decode',location:'Imported by Console and the receptor',description:'Converts text to and from ternary_utf8_v1 signals. This is reversible encoding. The same library is used on both sides of ROS transport.',input:'UTF-8 text or encoded signal',output:'Signal bytes + pulse, or decoded text'},
-    bridge: {name:'rosbridge',icon:'⌁',type:'ros',kind:'ROS 2 bridge',x:285,y:285,subtitle:'WebSocket ↔ ROS 2',location:'/rosbridge_websocket + /rosapi',description:'Connects the external Console to Grace’s ROS graph. Stimulus and response events cross this bridge in opposite directions.',input:'WebSocket publish / subscribe envelopes',output:'/telepathic/stimulus · /telepathic/response'},
-    receptor: {name:'Telepathy',icon:'✦',type:'ros',kind:'ROS 2 node',x:480,y:405,subtitle:'Grace’s receptor',location:'/telepathy_receptor · AIVA',description:'Grace’s entry point. Decodes the stimulus, dispatches chat or Canvas requests, and encodes text in response events. The conversation and memory libraries run inside this process.',input:'TelepathicSignal on /telepathic/stimulus',output:'JSON std_msgs/String on /telepathic/response'},
+    bridge: {name:'rosbridge',icon:'⌁',type:'ros',kind:'ROS 2 bridge',x:285,y:285,subtitle:'WebSocket ↔ ROS 2',location:'/rosbridge_websocket + /rosapi',description:'Connects the external Console to AIVA’s ROS graph. Stimulus and response events cross this bridge in opposite directions.',input:'WebSocket publish / subscribe envelopes',output:'/telepathic/stimulus · /telepathic/response'},
+    receptor: {name:'Telepathy',icon:'✦',type:'ros',kind:'ROS 2 node',x:480,y:405,subtitle:'AIVA’s receptor',location:'/telepathy_receptor · AIVA',description:'AIVA’s entry point. Decodes the stimulus, dispatches chat or Canvas requests, and encodes text in response events. The conversation and memory libraries run inside this process.',input:'TelepathicSignal on /telepathic/stimulus',output:'JSON std_msgs/String on /telepathic/response'},
     interactive: {name:'Interactive',icon:'✳',type:'python',kind:'In-process Python library',x:690,y:320,subtitle:'Conversation engine',location:'Inside the telepathy_receptor process',description:'Assembles persona, current time, recent exchanges, and the new prompt. Calls the model, streams response deltas, then saves the completed conversation turn.',input:'Decoded prompt + request identifier',output:'Model request; start / delta / done events'},
-    persona: {name:'Persona',icon:'☷',type:'python',kind:'Configuration context',x:665,y:115,subtitle:'Soul & user profile',location:'Shell persona/SOUL.md + user profile',description:'Grace’s persona and the user profile provide context for conversation. This is configuration read by the engine, rather than an independent ROS service.',input:'Configured persona and profile files',output:'Context for the model’s messages'},
+    persona: {name:'Persona',icon:'☷',type:'python',kind:'Configuration context',x:665,y:115,subtitle:'Soul & user profile',location:'Shell persona/SOUL.md + user profile',description:'AIVA’s persona and the user profile provide context for conversation. This is configuration read by the engine, rather than an independent ROS service.',input:'Configured persona and profile files',output:'Context for the model’s messages'},
     model: {name:'Model server',icon:'✧',type:'http',kind:'Separate model service',x:865,y:150,subtitle:'Inference endpoint',location:'Configured OpenAI-compatible endpoint',description:'Generates streaming text for conversation, or structured tool actions for Canvas. The actual endpoint and model depend on AIVA’s configuration.',input:'POST /v1/chat/completions',output:'Text deltas or Canvas tool actions'},
     memory: {name:'Memory',icon:'▤',type:'python',kind:'In-process Python library',x:865,y:470,subtitle:'SQLite · recent turns',location:'agi-memory · receptor process',description:'Loads the configured recent conversation window and persists completed turns in SQLite. The current chat flow uses recent history; it does not perform semantic recall.',input:'Load recent exchanges / persist turn',output:'Recent messages; saved conversation history'},
-    canvas: {name:'Canvas',icon:'✎',type:'python',kind:'Python capability + orchestration',x:680,y:555,subtitle:'Actions & visual feedback',location:'Receptor orchestration + grace-canvas',description:'Plans and validates drawing actions, publishes them for browser replay, and requests snapshots for visual review when the configured model supports vision.',input:'Drawing prompt, objects, and screenshots',output:'Canvas actions / snapshot requests / replies'},
+    canvas: {name:'Canvas',icon:'✎',type:'python',kind:'Python capability + orchestration',x:680,y:555,subtitle:'Actions & visual feedback',location:'Receptor orchestration + aiva-canvas',description:'Plans and validates drawing actions, publishes them for browser replay, and requests snapshots for visual review when the configured model supports vision.',input:'Drawing prompt, objects, and screenshots',output:'Canvas actions / snapshot requests / replies'},
     imaging: {name:'Imaging',icon:'◩',type:'http',kind:'Optional painting capability',x:455,y:555,subtitle:'Optional MOSS sidecar',optional:true,location:'Imaging library + moss-server sidecar',description:'Generates raster artwork for explicit image requests when MOSS is installed. Default tool drawing does not invoke this branch. This preview’s Canvas scenario demonstrates vector tools.',input:'An explicit image action and painting prompt',output:'Bitmap published in a canvas_image event'},
     logs: {name:'Health & logs',icon:'≋',type:'ros',kind:'ROS 2 monitoring node',x:160,y:500,subtitle:'Passive observation',location:'/agi_log_collector',description:'Collects ROS logs, stores rotating JSONL files, and publishes /agi/logs. This is an observation branch, rather than a required hop for a prompt.',input:'ROS log records',output:'/agi/logs + local log files'}
   };
@@ -89,10 +89,10 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
       event('console','cypher','Encode the request','Cypher converts UTF-8 text to ternary_utf8_v1 signal bytes.'),
       event('cypher','console','Signal is ready','Console receives encoded bytes and pulse metadata.'),
       event('console','bridge','Cross the bridge','Console publishes a TelepathicSignal through rosbridge.'),
-      event('bridge','receptor','Grace receives the signal','/telepathic/stimulus reaches the receptor, which decodes the request.')
+      event('bridge','receptor','AIVA receives the signal','/telepathic/stimulus reaches the receptor, which decodes the request.')
     ];
     const back=[
-      event('receptor','bridge','A response leaves Grace','The receptor encodes response text and publishes /telepathic/response.'),
+      event('receptor','bridge','A response leaves AIVA','The receptor encodes response text and publishes /telepathic/response.'),
       event('bridge','console','Return through rosbridge','Console receives the ROS event and decodes its text content.'),
       event('console','user','The journey comes full circle','The browser displays the simulated response. A real session streams many events along this route.')
     ];
@@ -105,7 +105,7 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
       event('console','user','Watch the drawing unfold','The browser replays strokes and shapes on its local canvas.'),
       event('user','console','A fresh look at the artwork','Illustrative visual review: the browser sends a fresh screenshot when requested.'),
       event('console','bridge','Send the snapshot','Console publishes the snapshot on /aiva/canvas_snapshot.'),
-      event('bridge','receptor','Snapshot reaches Grace','The receptor matches the screenshot to the pending drawing request.'),
+      event('bridge','receptor','Snapshot reaches AIVA','The receptor matches the screenshot to the pending drawing request.'),
       event('receptor','canvas','Review the result','A vision-capable configuration can compare the rendered artwork with the request.'),
       event('canvas','model','Refine with visual context','Illustrative review pass using the latest screenshot. Actual passes depend on model support.'),
       event('model','canvas','Finish the study','The simulated review completes. Real requests may produce additional edits.'),
@@ -154,7 +154,7 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
     activeLink.path.classList.add('current');
     for(const [id,node] of Object.entries(nodeElements))node.classList.toggle('active',id===step.from||id===step.to);
     inspect(step.to);positionPacket(0);revealModule(step.to);
-    $('graceState').textContent=scenario==='chat'?'A conversation in motion':'A little creative spark';
+    $('aivaState').textContent=scenario==='chat'?'A conversation in motion':'A little creative spark';
     $('currentEvent').textContent=`${step.title}. ${step.detail}`;
     if(index===0)$('journal').replaceChildren();
     const row=document.createElement('li');row.textContent=step.title;
@@ -169,7 +169,7 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
     $('packet').setAttribute('hidden','');$('journal').replaceChildren();
     const empty=document.createElement('li');empty.className='empty-journal';empty.textContent='Your prompt’s story will unfold here.';$('journal').append(empty);
     $('eventCount').textContent='0 events';$('currentEvent').textContent='Ready when you are. Press play or step through the journey.';
-    $('graceState').textContent='A world of connections';inspect('receptor');updateControls();
+    $('aivaState').textContent='A world of connections';inspect('receptor');updateControls();
   }
   function ensureSteps() {
     if(steps.length)return true;
@@ -183,7 +183,7 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
     lastTime=now;positionPacket(Math.min(elapsed/duration,1));
     if(elapsed>=duration){
       if(index<steps.length-1)showStep(index+1);
-      else{stop();$('packet').setAttribute('hidden','');$('graceState').textContent='A journey, complete';return;}
+      else{stop();$('packet').setAttribute('hidden','');$('aivaState').textContent='A journey, complete';return;}
     }
     frameId=requestAnimationFrame(tick);
   }
@@ -194,7 +194,7 @@ const companionName = () => window.AGIIdentity?.name || 'Grace';
     if(index<0)showStep(0);
     playing=true;lastTime=null;updateControls();frameId=requestAnimationFrame(tick);
   });
-  $('step').addEventListener('click',()=>{stop();if(!ensureSteps())return;if(index<steps.length-1){showStep(index+1);positionPacket(1);}if(index===steps.length-1){$('graceState').textContent='A journey, complete';$('packet').setAttribute('hidden','');}});
+  $('step').addEventListener('click',()=>{stop();if(!ensureSteps())return;if(index<steps.length-1){showStep(index+1);positionPacket(1);}if(index===steps.length-1){$('aivaState').textContent='A journey, complete';$('packet').setAttribute('hidden','');}});
   $('reset').addEventListener('click',reset);
   document.querySelectorAll('[data-scenario]').forEach(button=>button.addEventListener('click',()=>{
     if(scenario===button.dataset.scenario)return;

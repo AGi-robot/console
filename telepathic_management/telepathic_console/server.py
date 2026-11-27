@@ -42,15 +42,15 @@ FRONTEND_DIR = INTERFACE_DIR / "frontend"
 app = FastAPI(title="AGi Web Teleops Console", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=INTERFACE_DIR / "backend" / "static"), name="static")
 _aiva_last_seen: float | None = None
-_grace_activity_seen: float | None = None
-_grace_activity = "resting"
+_aiva_activity_seen: float | None = None
+_aiva_activity = "resting"
 _rgb = OpenRgb()
 
 
 @app.on_event("startup")
 async def start_openrgb() -> None:
     await asyncio.to_thread(_rgb.start)
-    app.state.rgb_watchdog = asyncio.create_task(_watch_grace_activity())
+    app.state.rgb_watchdog = asyncio.create_task(_watch_aiva_activity())
 
 
 @app.on_event("shutdown")
@@ -62,17 +62,17 @@ async def stop_openrgb() -> None:
     await asyncio.to_thread(_rgb.stop)
 
 
-async def _watch_grace_activity() -> None:
+async def _watch_aiva_activity() -> None:
     """Return the lights to steady dark plum when the UI stops reporting activity."""
-    global _grace_activity
+    global _aiva_activity
     try:
         while True:
             await asyncio.sleep(3)
-            if _grace_activity != "resting" and (
-                _grace_activity_seen is None or time.monotonic() - _grace_activity_seen > 12
+            if _aiva_activity != "resting" and (
+                _aiva_activity_seen is None or time.monotonic() - _aiva_activity_seen > 12
             ):
-                _grace_activity = "resting"
-                await asyncio.to_thread(_rgb.set_state, _grace_activity)
+                _aiva_activity = "resting"
+                await asyncio.to_thread(_rgb.set_state, _aiva_activity)
     except asyncio.CancelledError:
         raise
 
@@ -111,19 +111,19 @@ async def aiva_presence() -> None:
     _aiva_last_seen = time.monotonic()
 
 
-@app.post("/api/presence/grace", status_code=204)
-async def grace_activity(request: Request) -> None:
-    """Apply a validated Grace activity state to the local OpenRGB controller."""
-    global _grace_activity, _grace_activity_seen
+@app.post("/api/activity", status_code=204)
+async def aiva_activity(request: Request) -> None:
+    """Apply a validated AIVA activity state to the local OpenRGB controller."""
+    global _aiva_activity, _aiva_activity_seen
     try:
         payload = await request.json()
     except (json.JSONDecodeError, ValueError):
         raise HTTPException(status_code=400, detail="Expected a JSON activity state") from None
     state = payload.get("state") if isinstance(payload, dict) else None
     if state not in {"thinking", "responding", "working", "waiting", "resting"}:
-        raise HTTPException(status_code=422, detail="Unknown Grace activity state")
-    _grace_activity_seen = time.monotonic()
-    _grace_activity = state
+        raise HTTPException(status_code=422, detail="Unknown AIVA activity state")
+    _aiva_activity_seen = time.monotonic()
+    _aiva_activity = state
     await asyncio.to_thread(_rgb.set_state, state)
 
 
@@ -155,7 +155,7 @@ def _encode_stimulus(text: str, identifier: str) -> dict:
     signal, pulse = encode_text(text)
     return {"source": os.getenv("AGI_SOURCE_ID", socket.gethostname()),
             "signal": list(signal), "pulse": pulse,
-            "channel": os.getenv("AGI_TELEPATHIC_CHANNEL", "grace"),
+            "channel": os.getenv("AGI_TELEPATHIC_CHANNEL", "aiva"),
             "scheme": scheme, "identifier": identifier}
 
 

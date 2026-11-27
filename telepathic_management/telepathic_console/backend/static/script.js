@@ -263,7 +263,7 @@
         const petCounter = document.getElementById('petCounter');
         const pokeCounter = document.getElementById('pokeCounter');
         const chatContainer = document.getElementById('chatContainer');
-        const CHAT_HISTORY_KEY = 'agi.grace.chat.v1';
+        const CHAT_HISTORY_KEY = 'agi.aiva.chat.v1';
         const CHAT_HISTORY_LIMIT = 200;
         const BAD_SAVED_CHAT_PATTERNS = [
             /you want a \*name\*\? fine[—-] i['’]ll call you/i,
@@ -578,7 +578,7 @@
                 const response = pokeResponses[Math.floor(Math.random() * pokeResponses.length)];
                 speechBubble.textContent = response;
                 speechBubble.classList.add('show');
-                createMessageElement('grace', response);
+                createMessageElement('aiva', response);
             } else {
                 speechBubble.textContent = ['😢', '💔', '😞', '🥺'][Math.min(intensity - 1, 3)] + ' Ouch!';
                 speechBubble.classList.add('show');
@@ -729,7 +729,7 @@
                             body: message.data
                         }).then(response => {
                             if (!response.ok) throw new Error(`Signal transmission failed: ${response.status}`);
-                        }).catch(error => createMessageElement('grace', error.message));
+                        }).catch(error => createMessageElement('aiva', error.message));
                     }
                 };
 
@@ -761,7 +761,7 @@
                         } else if (data.type === 'error') {
                             if (currentStreamMessage) finishStreaming();
                             setEmotion('sad');
-                            createMessageElement('grace', data.content);
+                            createMessageElement('aiva', data.content);
                         }
                     } catch (e) {
                         if (!isStreaming) {
@@ -839,7 +839,7 @@
                 const response = petResponses[Math.floor(Math.random() * petResponses.length)];
                 speechBubble.textContent = response;
                 speechBubble.classList.add('show');
-                createMessageElement('grace', response);
+                createMessageElement('aiva', response);
             } else {
                 speechBubble.textContent = ['💖', '💕', '💗', '🥰', '💝'][Math.floor(Math.random() * 5)];
                 speechBubble.classList.add('show');
@@ -978,13 +978,13 @@
         }
 
         function updateInferenceWave(active, tps = 0) {
-            window.dispatchEvent(new CustomEvent('agi-grace-inference', {
+            window.dispatchEvent(new CustomEvent('agi-aiva-inference', {
                 detail: { active, responding: active && inferenceHasResponse, tps: Number.isFinite(tps) ? tps : 0 },
             }));
         }
 
         function updateAgenticWork(active) {
-            window.dispatchEvent(new CustomEvent('agi-grace-agentic-work', { detail: { active } }));
+            window.dispatchEvent(new CustomEvent('agi-aiva-agentic-work', { detail: { active } }));
         }
 
         function refreshInferenceRate() {
@@ -1015,7 +1015,7 @@
             speechBubble.textContent = 'Thinking... 💭';
             speechBubble.classList.add('show');
 
-            currentStreamMessage = createMessageElement('grace', '');
+            currentStreamMessage = createMessageElement('aiva', '');
             const contentDiv = currentStreamMessage.querySelector('.message-content');
 
             renderMarkdown(contentDiv, streamBuffer);
@@ -1105,7 +1105,7 @@
             try {
                 const history = Array.from(chatContainer.querySelectorAll('.message'))
                     .map((element) => ({
-                        sender: element.classList.contains('user') ? 'user' : 'grace',
+                        sender: element.classList.contains('user') ? 'user' : 'aiva',
                         text: element.querySelector('.message-content')?.dataset.rawMarkdown || element.querySelector('.message-content')?.textContent || '',
                         time: element.querySelector('.message-time')?.dateTime || new Date().toISOString(),
                         metrics: element.dataset.metrics ? JSON.parse(element.dataset.metrics) : null
@@ -1114,7 +1114,7 @@
                     .slice(-CHAT_HISTORY_LIMIT);
                 localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
             } catch (error) {
-                console.warn('Could not save Grace chat history in this browser:', error);
+                console.warn('Could not save AIVA chat history in this browser:', error);
             }
         }
 
@@ -1138,12 +1138,12 @@
                     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(validHistory));
                 }
                 validHistory.slice(-CHAT_HISTORY_LIMIT).forEach((message) => {
-                    if (!message || !['user', 'grace'].includes(message.sender) || typeof message.text !== 'string') return;
+                    if (!message || !['user', 'aiva'].includes(message.sender) || typeof message.text !== 'string') return;
                     createMessageElement(message.sender, message.text, message.time, false, message.metrics);
                 });
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             } catch (error) {
-                console.warn('Could not restore Grace chat history from this browser:', error);
+                console.warn('Could not restore AIVA chat history from this browser:', error);
             }
         }
 
@@ -1151,9 +1151,9 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender}`;
 
-            if (sender === 'grace') {
+            if (sender === 'aiva') {
                 const avatar = document.createElement('div');
-                avatar.className = 'grace-mini-avatar';
+                avatar.className = 'aiva-mini-avatar';
                 avatar.setAttribute('aria-hidden', 'true');
                 avatar.textContent = '✦';
                 msgDiv.appendChild(avatar);
@@ -1162,7 +1162,7 @@
 
             const label = document.createElement('div');
             label.className = 'message-label';
-            label.textContent = sender === 'user' ? 'You' : (window.AGIIdentity?.name || 'Grace');
+            label.textContent = sender === 'user' ? 'You' : (window.AGIIdentity?.name || 'AIVA');
 
             const content = document.createElement('div');
             content.className = 'message-content';
@@ -1177,7 +1177,7 @@
             timestamp.dateTime = validTime.toISOString();
             timestamp.textContent = validTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             msgDiv.appendChild(timestamp);
-            if (sender === 'grace' && metrics) appendMessageMetrics(msgDiv, metrics);
+            if (sender === 'aiva' && metrics) appendMessageMetrics(msgDiv, metrics);
             chatContainer.appendChild(msgDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             if (persist && text.trim()) saveChatHistory();
@@ -1395,7 +1395,7 @@
                     setTimeout(() => {
                         const offlineResponse = "💖: I'm running in offline mode, but I still love you! Pet me instead? 💕";
                         detectAndSetEmotion(offlineResponse);
-                        createMessageElement('grace', offlineResponse);
+                        createMessageElement('aiva', offlineResponse);
                     }, 500);
                 }
 

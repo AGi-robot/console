@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Grace is the conversational mind of AuRoRA, built by OppaAI.">
-    <title>Grace — Talk, reflect, and be understood.</title>
+    <meta name="description" content="AIVA is the conversational mind of AuRoRA, built by OppaAI.">
+    <title>AIVA — Talk, reflect, and be understood.</title>
     <script type="importmap">
       {"imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -15,7 +15,7 @@
     <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" crossorigin>
     <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js" crossorigin>
     <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.4.2/lib/three-vrm.module.js" crossorigin>
-    <link rel="preload" href="/static/assets/Grace.vrm" as="fetch" crossorigin fetchpriority="high">
+    <link rel="preload" href="/static/assets/AIVA.vrm" as="fetch" crossorigin fetchpriority="high">
     <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
     <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/static/styles.css?v=chat-heart-removal-20261122">
@@ -29,14 +29,14 @@
     <div class="container companion-shell">
         <header class="app-header">
             <div class="app-heading">
-                <div class="grace-identity" aria-hidden="true">✦</div>
-                <div class="identity-copy"><h1 data-identity-name>Grace</h1>
+                <div class="aiva-identity" aria-hidden="true">✦</div>
+                <div class="identity-copy"><h1 data-identity-name>AIVA</h1>
                     <p class="subtitle" data-identity-field="tagline">Talk, reflect, and be understood.</p></div>
             </div>
             <div class="connection-bar"><div class="status-badge" role="status">
                 <span class="status-dot" id="statusDot"></span><span id="statusText">Connecting…</span>
                 <span class="presence-divider" aria-hidden="true"></span><span class="presence-wave" id="presenceWave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-                <span id="aivaPresence">Grace is resting</span>
+                <span id="aivaPresence">AIVA is resting</span>
             </div></div>
             <nav class="header-actions" aria-label="Console preferences">
                 <a class="theme-toggle" href="/canvas">✎ Canvas</a>
@@ -47,12 +47,12 @@
             </nav>
         </header>
         <main class="companion-layout">
-            <section class="chamber-panel" aria-label="Grace’s avatar chamber">
+            <section class="chamber-panel" aria-label="AIVA’s avatar chamber">
                 <div class="chamber-visual-layer" id="chamberVisualLayer">
                 <div class="chamber-art" aria-hidden="true"></div>
         <div class="probe-full-frame" aria-hidden="true"></div>
         <div class="robot-container" id="avatarContainer">
-            <div class="grace-avatar-stage" id="graceAvatarStage" aria-label="Grace avatar">
+            <div class="aiva-avatar-stage" id="aivaAvatarStage" aria-label="AIVA avatar">
                 <div class="fluid-tube" aria-hidden="true">
                     <span class="tube-bubble" style="--bubble-x: 8%; --bubble-size: 6px; --rise-time: 9s; --rise-delay: -3.00s; --drift: 8px"></span>
                     <span class="tube-bubble" style="--bubble-x: 39%; --bubble-size: 4px; --rise-time: 12s; --rise-delay: -4.73s; --drift: -11px"></span>
@@ -67,7 +67,7 @@
                     <span class="tube-bubble" style="--bubble-x: 48%; --bubble-size: 4px; --rise-time: 7s; --rise-delay: -8.30s; --drift: 8px"></span>
                     <span class="tube-bubble" style="--bubble-x: 79%; --bubble-size: 11px; --rise-time: 10s; --rise-delay: -10.03s; --drift: -11px"></span>
                 </div>
-                <p class="avatar-placeholder">Grace’s chamber<br><span>Waiting for AIVA to connect</span></p>
+                <p class="avatar-placeholder">AIVA’s chamber<br><span>Waiting for AIVA to connect</span></p>
                 <svg class="avatar-probes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                     <path class="probe-wire probe-head" d="M27 4 C29 12 37 23 42 33" />
                     <path class="probe-wire probe-head" d="M38 4 C39 13 41 24 44 34" />
@@ -78,19 +78,19 @@
                     <path class="probe-wire probe-body" d="M40 4 C40 21 41 34 42 47" />
                     <path class="probe-wire probe-body" d="M60 4 C60 21 59 34 58 47" />
                     <path class="probe-wire probe-body" d="M70 4 C70 17 65 25 60 35" />
-                    <!-- Red cables carry signals from the machine to Grace. -->
+                    <!-- Red cables carry signals from the machine to AIVA. -->
                     <circle class="probe-signal probe-signal-red" r=".14"><animateMotion path="M27 4 C29 12 37 23 42 33" dur="1.37s" begin="-0.17s" keyPoints="0;0.28;0.69;1" keyTimes="0;0.31;0.73;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-red" r=".14"><animateMotion path="M38 4 C39 13 41 24 44 34" dur="1.68s" begin="-0.83s" keyPoints="0;0.19;0.76;1" keyTimes="0;0.16;0.78;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-red" r=".14"><animateMotion path="M46 4 C46 14 47 24 48 33" dur="1.22s" begin="-0.39s" keyPoints="0;0.41;0.82;1" keyTimes="0;0.49;0.71;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-red" r=".14"><animateMotion path="M54 4 C54 14 53 24 52 33" dur="1.91s" begin="-1.14s" keyPoints="0;0.23;0.58;1" keyTimes="0;0.14;0.62;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-red" r=".14"><animateMotion path="M63 4 C62 13 60 24 58 34" dur="1.49s" begin="-0.62s" keyPoints="0;0.35;0.65;1" keyTimes="0;0.57;0.79;1" calcMode="linear" repeatCount="indefinite" /></circle>
-                    <!-- Mint cables carry signals from Grace back to the machine. -->
+                    <!-- Mint cables carry signals from AIVA back to the machine. -->
                     <circle class="probe-signal probe-signal-mint" r=".14"><animateMotion path="M40 35 C35 25 30 17 30 4" dur="1.58s" begin="-0.96s" keyPoints="0;0.32;0.84;1" keyTimes="0;0.24;0.82;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-mint" r=".14"><animateMotion path="M42 47 C41 34 40 21 40 4" dur="1.29s" begin="-0.28s" keyPoints="0;0.17;0.61;1" keyTimes="0;0.36;0.59;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-mint" r=".14"><animateMotion path="M58 47 C59 34 60 21 60 4" dur="1.84s" begin="-1.31s" keyPoints="0;0.46;0.73;1" keyTimes="0;0.55;0.68;1" calcMode="linear" repeatCount="indefinite" /></circle>
                     <circle class="probe-signal probe-signal-mint" r=".14"><animateMotion path="M60 35 C65 25 70 17 70 4" dur="1.43s" begin="-0.71s" keyPoints="0;0.26;0.67;1" keyTimes="0;0.18;0.75;1" calcMode="linear" repeatCount="indefinite" /></circle>
                 </svg>
-                <canvas id="robotVrmCanvas" aria-label="Grace 3D avatar"></canvas>
+                <canvas id="robotVrmCanvas" aria-label="AIVA 3D avatar"></canvas>
                 <div class="fluid-foreground" aria-hidden="true">
                     <span class="liquid-caustics"></span>
                     <span class="tube-bubble" style="--bubble-x: 16%; --bubble-size: 5px; --rise-time: 9s; --rise-delay: -11.00s; --drift: 8px"></span>
@@ -164,29 +164,29 @@
                 <div class="chamber-footer">
                 <label class="avatar-controls avatar-zoom-control">
                     <span class="zoom-label-out" aria-hidden="true">Zoom out</span>
-                    <input type="checkbox" role="switch" id="avatarZoomSwitch" aria-label="Toggle zoom on Grace" title="Switch between zoom out and zoom in" checked>
+                    <input type="checkbox" role="switch" id="avatarZoomSwitch" aria-label="Toggle zoom on AIVA" title="Switch between zoom out and zoom in" checked>
                     <span class="zoom-label-in" aria-hidden="true">Zoom in</span>
                 </label>
-                    <p class="avatar-hint">Grace is resting in her chamber</p>
+                    <p class="avatar-hint">AIVA is resting in her chamber</p>
                 </div>
             </section>
-            <section class="conversation-panel" aria-label="Chat with Grace">
+            <section class="conversation-panel" aria-label="Chat with AIVA">
                 <canvas id="matrixCanvas" aria-hidden="true"></canvas>
                 <div class="chat-container" id="chatContainer" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions text">
-                    <div class="chat-welcome"><span aria-hidden="true">✧</span><h2>A little space for us.</h2><p>Say hello to Grace to start a conversation.</p></div>
+                    <div class="chat-welcome"><span aria-hidden="true">✧</span><h2>A little space for us.</h2><p>Say hello to AIVA to start a conversation.</p></div>
                 </div>
                 <div class="composer-area">
         <div class="image-preview-area" id="imagePreviewArea">
             <button class="remove-btn" onclick="removeImage()">✕</button>
             <img id="previewImg" alt="Preview">
-            <input type="text" id="imagePrompt" placeholder="Ask Grace about this image..." maxlength="200">
+            <input type="text" id="imagePrompt" placeholder="Ask AIVA about this image..." maxlength="200">
         </div>
 
         <div class="chat-input-wrapper">
             <div class="chat-input-row">
                 <div class="chat-input-container">
                     <button class="input-btn plus-btn" id="plusBtn" onclick="togglePlusMenu()" title="Attach an image" aria-label="Attach an image">⌁</button>
-                    <input type="text" id="userInput" aria-label="Message Grace" placeholder="Message Grace…">
+                    <input type="text" id="userInput" aria-label="Message AIVA" placeholder="Message AIVA…">
                     <button class="input-btn globe-btn" id="globeBtn" onclick="toggleWebSearch()" title="Web search off" aria-label="Toggle web search" aria-pressed="false"><svg class="globe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M3.5 12h17M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z"></path></svg></button>
                 </div>
                 <button class="send-btn" id="sendBtn" aria-label="Send message" title="Send message" onclick="sendSignal()">➤</button>
@@ -207,7 +207,7 @@
                 </div>
             </section>
         </main>
-        <div class="mini-status" id="miniStatus" hidden><span id="statusEmoji">✦</span><span id="miniStatusText">Grace is here</span><span id="connDot"></span><span id="connText">Connecting</span></div>
+        <div class="mini-status" id="miniStatus" hidden><span id="statusEmoji">✦</span><span id="miniStatusText">AIVA is here</span><span id="connDot"></span><span id="connText">Connecting</span></div>
     </div>
     <script src="/static/script.js?v=chat-heart-removal-20261122" defer></script>
     <script type="module" src="/static/avatar.js?v=shared-companion-identity-20261122"></script>
